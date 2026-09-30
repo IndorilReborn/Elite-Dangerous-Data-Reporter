@@ -1,0 +1,95 @@
+import urllib.parse
+from typing import TYPE_CHECKING
+
+from eddr.db import CMDRLocationKind
+from eddr.utils import open_file
+
+if TYPE_CHECKING:
+    from eddr.controller import Controller
+
+
+class OverviewController:
+    def __init__(self, parent: "Controller"):
+        self.parent = parent
+
+        self.parent.model.selected_cmdr_name.trace_add(
+            "write", lambda *args: self._selected_cmdr_updated()
+        )
+        self.parent.view.overview.system_contextmenu.add_command(
+            label="Copy",
+            command=lambda: self.parent.view.copy_to_clipboard(
+                self.parent.view.overview.system_name.get()
+            ),
+        )
+        self.parent.view.overview.system_contextmenu.add_command(
+            label="Open (Inara)",
+            command=lambda: self.parent.open_system_on_inara(
+                self.parent.view.overview.system_name.get()
+            ),
+        )
+
+        self.parent.view.overview.location_contextmenu.add_command(
+            label="Copy",
+            command=lambda: self.parent.view.copy_to_clipboard(
+                self.parent.view.overview.location_name.get()
+            ),
+        )
+        self.parent.view.overview.location_contextmenu.add_command(
+            label="Open (Inara)", command=self._open_location_on_inara
+        )
+
+    def _open_location_on_inara(self):
+        cmdr = self.parent.model.selected_cmdr
+        assert cmdr is not None
+        assert (
+            cmdr.location.root.location_type == CMDRLocationKind.Station
+            or cmdr.location.root.location_type == CMDRLocationKind.Carrier
+        )
+
+        if cmdr.location.root.location_type == CMDRLocationKind.Carrier:
+            search_string = cmdr.location.root.callsign
+        else:
+            search_string = (
+                f"{cmdr.location.root.system_name} [{cmdr.location.root.name}]"
+            )
+        search_string = urllib.parse.urlencode({"search": search_string})
+
+        open_file(f"https://inara.cz/elite/station/?{search_string}")
+
+    def _selected_cmdr_updated(self):
+        selected_cmdr = self.parent.model.selected_cmdr
+
+        self.parent.view.overview.system_frame.pack_forget()
+        self.parent.view.overview.location_frame.pack_forget()
+
+        if not selected_cmdr:
+            return
+
+        if selected_cmdr.location.root.location_type == CMDRLocationKind.Unknown:
+            return
+
+        self.parent.view.overview.system_frame.pack(
+            side="top", fill="x", expand=False, padx=5, pady=5
+        )
+        self.parent.view.overview.system_name.set(
+            selected_cmdr.location.root.system_name
+        )
+
+        if selected_cmdr.location.root.location_type == CMDRLocationKind.Station:
+            self.parent.view.overview.location_frame.pack(
+                side="top", fill="x", expand=False, padx=5, pady=5
+            )
+            self.parent.view.overview.location_name.set(
+                selected_cmdr.location.root.name
+            )
+        elif selected_cmdr.location.root.location_type == CMDRLocationKind.Carrier:
+            self.parent.view.overview.location_frame.pack(
+                side="top", fill="x", expand=False, padx=5, pady=5
+            )
+            carrier_name = (
+                self.parent.model.get_carrier_name_by_market_id(
+                    selected_cmdr.location.root.market_id
+                )
+                or selected_cmdr.location.root.callsign
+            )
+            self.parent.view.overview.location_name.set(carrier_name)
