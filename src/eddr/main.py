@@ -32,7 +32,6 @@ def main() -> None:
     model = Model()
     view = View(root, model)
     Controller(journal_dirs, model, view)
-
     root.mainloop()
 
 

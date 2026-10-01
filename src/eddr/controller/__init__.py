@@ -1,4 +1,5 @@
 import os
+import threading
 import urllib.parse
 from datetime import UTC, datetime
 from queue import Empty
@@ -70,6 +71,12 @@ class Controller:
         self.update_pending_for_journal: dict[str, bool] = {}
 
         self._observer = Observer()
+        self._observer.daemon = True
+        self._observer.start()
+
+        threading.Thread(target=self._warm_up_journals, daemon=True).start()
+
+    def _warm_up_journals(self):
         handler = JournalEventHandler(self)
 
         journal_files = []
@@ -91,11 +98,8 @@ class Controller:
         # Just catch up before we start handling new stuff
         self._process_journal_messages()
         print(f"Finished catching up {datetime.now(UTC)}")
-
-        self._observer.daemon = True
-        self._observer.start()
-
         self.update_active_journals()
+        self.view.set_state("overview")
 
     def _schedule_journal_update(self, journal_path: str):
         self.view.add_callback(self._schedule_debounced_journal_update, journal_path)

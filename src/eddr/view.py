@@ -1,9 +1,10 @@
+from datetime import UTC, datetime
 import tkinter as tk
 import traceback
 from collections.abc import Callable
 from queue import Empty, Queue
 from tkinter import StringVar, Tk, ttk
-from typing import Any
+from typing import Any, Literal
 
 from eddr.models import Model
 
@@ -69,10 +70,12 @@ class View:
         # Clock
         self.clock_utc = ttk.Label(self.top_bar, width=8)
         self.clock_utc.pack(side="right", anchor="ne")
+        self.root.after(0, self._update_clock)
 
         self.tab_controller = ttk.Notebook(self.root)
-        self.tab_controller.pack(expand=True, fill="both")
+        # self.tab_controller.pack(expand=True, fill="both")
 
+        self.loading_view = LoadingView(self)
         self.overview = OverviewView(self)
 
         self._callbacks: Queue[
@@ -98,6 +101,41 @@ class View:
             except Exception:
                 print(f"Exception while running callback:\n{traceback.format_exc()}")
         self.root.after(50, self._drain_ui_callbacks)
+
+    def set_state(self, state: Literal["loading", "overview"]):
+        self.loading_view.frame.pack_forget()
+        self.tab_controller.pack_forget()
+
+        if state == "loading":
+            self.loading_view.frame.pack(side="top", fill="both", expand=True)
+        elif state == "overview":
+            self.tab_controller.pack(side="top", fill="both", expand=True)
+
+    def _update_clock(self):
+        now = datetime.now(UTC)
+        self.clock_utc.configure(text=now.strftime("%H:%M:%S"))
+        self.root.after(1000, self._update_clock)
+
+
+class LoadingView:
+    def __init__(self, parent: View):
+        self.parent = parent
+
+        self.frame = ttk.Frame(self.parent.root)
+        self.frame.pack(side="top", fill="x", expand=False)
+
+        self.loading_label = ttk.Label(
+            self.frame,
+            text="Catching up on your journals,\nthis could take a while...",
+            justify="center",
+        )
+        self.loading_label.pack(side="top", expand=False, padx=5, pady=5, anchor="n")
+
+        self.progress = ttk.Progressbar(
+            self.frame, orient="horizontal", mode="indeterminate", length=250
+        )
+        self.progress.pack(side="top", fill="x", expand=False, padx=5, pady=5)
+        self.progress.start()
 
 
 class OverviewView:
