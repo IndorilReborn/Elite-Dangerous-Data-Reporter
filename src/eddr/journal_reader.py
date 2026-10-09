@@ -1,5 +1,6 @@
 import os
-from queue import Queue
+from collections.abc import Callable
+from typing import Any
 
 from pydantic import BaseModel, ValidationError
 from sqlmodel import Session, func, select
@@ -13,11 +14,12 @@ class JournalEntry(BaseModel):
     entry: RawJournalEntry
     fid: str
     active: bool
+    journal_file: str
 
 
 class JournalReader:
-    def __init__(self):
-        self.unprocessed_journal_entries: Queue[JournalEntry] = Queue()
+    def __init__(self, callback: Callable[[JournalEntry], Any]):
+        self.callback = callback
 
     def active_journals(self) -> list[JournalFile]:
         with Session(engine) as db:
@@ -66,11 +68,12 @@ class JournalReader:
                         db_journal_file.active = is_active
 
                         for journal_entry in journal_entries:
-                            self.unprocessed_journal_entries.put_nowait(
+                            self.callback(
                                 JournalEntry(
                                     entry=journal_entry,
                                     fid=db_journal_file.fid,
                                     active=is_active,
+                                    journal_file=journal_file,
                                 )
                             )
 
@@ -99,8 +102,13 @@ class JournalReader:
                 db.commit()
 
                 for journal_entry in journal_entries:
-                    self.unprocessed_journal_entries.put_nowait(
-                        JournalEntry(entry=journal_entry, fid=fid, active=is_active)
+                    self.callback(
+                        JournalEntry(
+                            entry=journal_entry,
+                            fid=fid,
+                            active=is_active,
+                            journal_file=journal_file,
+                        )
                     )
 
     @staticmethod
@@ -110,8 +118,10 @@ class JournalReader:
             try:
                 journal_entry = RawJournalEntry.model_validate_json(line.strip())
                 journal_entries.append(journal_entry)
-            except ValidationError:
-                pass
+            except ValidationError as e:
+                if "Docked" in line:
+                    print(e)
+                # pass
                 # journal_entry = json.loads(line)
                 # print(f"WARNING: could not read event: {journal_entry['event']}")
         return journal_entries

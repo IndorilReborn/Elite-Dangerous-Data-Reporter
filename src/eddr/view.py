@@ -1,9 +1,9 @@
-from datetime import UTC, datetime
 import tkinter as tk
 import traceback
 from collections.abc import Callable
+from datetime import UTC, datetime
 from queue import Empty, Queue
-from tkinter import StringVar, Tk, ttk
+from tkinter import BooleanVar, StringVar, Tk, ttk
 from typing import Any, Literal
 
 from eddr.models import Model
@@ -76,6 +76,7 @@ class View:
         # self.tab_controller.pack(expand=True, fill="both")
 
         self.loading_view = LoadingView(self)
+        self.inactive_view = InactiveView(self)
         self.overview = OverviewView(self)
 
         self._callbacks: Queue[
@@ -102,12 +103,15 @@ class View:
                 print(f"Exception while running callback:\n{traceback.format_exc()}")
         self.root.after(50, self._drain_ui_callbacks)
 
-    def set_state(self, state: Literal["loading", "overview"]):
+    def set_state(self, state: Literal["loading", "inactive", "overview"]):
         self.loading_view.frame.pack_forget()
+        self.inactive_view.frame.pack_forget()
         self.tab_controller.pack_forget()
 
         if state == "loading":
             self.loading_view.frame.pack(side="top", fill="both", expand=True)
+        elif state == "inactive":
+            self.inactive_view.frame.pack(side="top", fill="both", expand=True)
         elif state == "overview":
             self.tab_controller.pack(side="top", fill="both", expand=True)
 
@@ -138,6 +142,17 @@ class LoadingView:
         self.progress.start()
 
 
+class InactiveView:
+    def __init__(self, parent: View):
+        self.parent = parent
+
+        self.frame = ttk.Frame(self.parent.root)
+        self.frame.pack(side="top", fill="x", expand=True)
+
+        self.label = ttk.Label(self.frame, text="No active CMDRs", justify="center")
+        self.label.pack(side="top", expand=False, anchor="center")
+
+
 class OverviewView:
     def __init__(self, parent: View):
         self.parent = parent
@@ -159,6 +174,21 @@ class OverviewView:
             values=[],
         )
         self.cmdr_selector_combobox.pack(side="left", fill="x", expand=False)
+
+        self.ship_name = StringVar(value="")
+        self.ship_frame = ttk.LabelFrame(self.tab, text="Ship")
+        self.ship_frame.pack(side="top", fill="x", expand=False, padx=5, pady=5)
+        self._ship_label = ttk.Label(self.ship_frame, textvariable=self.ship_name)
+        self._ship_label.pack(side="top", fill="x", expand=False, padx=5, pady=5)
+        self.ship_contextmenu = tk.Menu(self.parent.root, tearoff=0)
+        self.ship_frame.bind(
+            "<Button-3>",
+            lambda event: self.ship_contextmenu.post(event.x_root, event.y_root),
+        )
+        self._ship_label.bind(
+            "<Button-3>",
+            lambda event: self.ship_contextmenu.post(event.x_root, event.y_root),
+        )
 
         self.system_name = StringVar(value="")
         self.system_frame = ttk.LabelFrame(self.tab, text="System")
@@ -191,3 +221,9 @@ class OverviewView:
             "<Button-3>",
             lambda event: self.location_contextmenu.post(event.x_root, event.y_root),
         )
+
+        self.silent_on = BooleanVar(value=False)
+        self.silent_checkbox = ttk.Checkbutton(
+            self.tab, text="Silent Mode", variable=self.silent_on
+        )
+        self.silent_checkbox.pack(side="top", fill="x", expand=False, padx=5, pady=5)

@@ -16,6 +16,9 @@ class JournalEntryKind(str, enum.Enum):
     Docked = "Docked"
     Undocked = "Undocked"
     CarrierStats = "CarrierStats"
+    Loadout = "Loadout"
+    Market = "Market"
+    LoadGame = "LoadGame"
 
 
 class JournalEntryBase(BaseModel):

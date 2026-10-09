@@ -38,6 +38,16 @@ class OverviewController:
             label="Open (Inara)", command=self._open_location_on_inara
         )
 
+        self.parent.view.overview.ship_contextmenu.add_command(
+            label="Copy SLEF", command=lambda: print("Not yet")
+        )
+        self.parent.view.overview.ship_contextmenu.add_command(
+            label="Open (EDSY)", command=lambda: print("Not yet")
+        )
+        self.parent.view.overview.ship_contextmenu.add_command(
+            label="Open (Coriolis)", command=lambda: print("Not yet")
+        )
+
     def _open_location_on_inara(self):
         cmdr = self.parent.model.selected_cmdr
         assert cmdr is not None
@@ -65,11 +75,21 @@ class OverviewController:
         if not selected_cmdr:
             return
 
+        self.parent.view.overview.ship_name.set(
+            f"{selected_cmdr.current_ship_slef.ShipName} ({selected_cmdr.current_ship_slef.ShipIdent})"
+        )
+        self.parent.view.overview.silent_on.set(selected_cmdr.silent)
+
         if selected_cmdr.location.root.location_type == CMDRLocationKind.Unknown:
             return
 
         self.parent.view.overview.system_frame.pack(
-            side="top", fill="x", expand=False, padx=5, pady=5
+            after=self.parent.view.overview._cmdr_selector_frame,
+            side="top",
+            fill="x",
+            expand=False,
+            padx=5,
+            pady=5,
         )
         self.parent.view.overview.system_name.set(
             selected_cmdr.location.root.system_name
@@ -77,14 +97,24 @@ class OverviewController:
 
         if selected_cmdr.location.root.location_type == CMDRLocationKind.Station:
             self.parent.view.overview.location_frame.pack(
-                side="top", fill="x", expand=False, padx=5, pady=5
+                after=self.parent.view.overview.system_frame,
+                side="top",
+                fill="x",
+                expand=False,
+                padx=5,
+                pady=5,
             )
             self.parent.view.overview.location_name.set(
                 selected_cmdr.location.root.name
             )
         elif selected_cmdr.location.root.location_type == CMDRLocationKind.Carrier:
             self.parent.view.overview.location_frame.pack(
-                side="top", fill="x", expand=False, padx=5, pady=5
+                after=self.parent.view.overview.system_frame,
+                side="top",
+                fill="x",
+                expand=False,
+                padx=5,
+                pady=5,
             )
             carrier_name = (
                 self.parent.model.get_carrier_name_by_market_id(

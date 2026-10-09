@@ -8,7 +8,10 @@ from eddr.journal_schemas.commander import Commander
 from eddr.journal_schemas.docked import Docked
 from eddr.journal_schemas.fsd_jump import FSDJump
 from eddr.journal_schemas.heading import Heading
+from eddr.journal_schemas.load_game import LoadGame
+from eddr.journal_schemas.loadout import Loadout
 from eddr.journal_schemas.location import Location
+from eddr.journal_schemas.market import Market
 from eddr.journal_schemas.shutdown import Shutdown
 from eddr.journal_schemas.supercruise_entry import SuperCruiseEntry
 from eddr.journal_schemas.supercruise_exit import SuperCruiseExit
@@ -26,7 +29,10 @@ RawJournalEntry = RootModel[
         | SuperCruiseExit
         | Docked
         | Undocked
-        | CarrierStats,
+        | CarrierStats
+        | Loadout
+        | Market
+        | LoadGame,
         Field(discriminator="event"),
     ]
 ]

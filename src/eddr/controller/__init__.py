@@ -1,8 +1,8 @@
 import os
+import re
 import threading
 import urllib.parse
 from datetime import UTC, datetime
-from queue import Empty
 from typing import cast
 
 from sqlmodel import Session, col, select
@@ -15,6 +15,7 @@ from watchdog.events import (
 )
 from watchdog.observers import Observer
 
+from eddr.controller.eddn import EDDNController
 from eddr.controller.overview import OverviewController
 from eddr.db import (
     Carrier,
@@ -30,10 +31,13 @@ from eddr.journal_reader import JournalEntry, JournalReader
 from eddr.journal_schemas.base import JournalEntryKind
 from eddr.journal_schemas.carrier_jump import CarrierJump
 from eddr.journal_schemas.fsd_jump import FSDJump
+from eddr.journal_schemas.loadout import FuelCapacity, Loadout
 from eddr.journal_schemas.location import Location
 from eddr.models import Model
 from eddr.utils import open_file
 from eddr.view import View
+
+JOURNAL_PATTERN = r"Journal\.\d{4}-\d{2}-\d{2}T\d{6}\.\d{2}\.log$"
 
 
 class JournalEventHandler(FileSystemEventHandler):
@@ -48,6 +52,7 @@ class JournalEventHandler(FileSystemEventHandler):
         | FileCreatedEvent,
     ) -> None:
         assert isinstance(event.src_path, str)
+        print(f"file updated: {event.src_path}")
         if event.is_directory:
             return
         if not event.src_path.endswith(".log"):
@@ -61,18 +66,21 @@ class JournalEventHandler(FileSystemEventHandler):
 class Controller:
     def __init__(self, journal_dirs: list[str], model: Model, view: View):
         self.journal_dirs = journal_dirs
-        self.journal_reader = JournalReader()
+        self.journal_reader = JournalReader(self._process_journal_msg)
 
         self.model = model
         self.view = view
+        self.view.set_state("loading")
 
         self.overview = OverviewController(self)
+        self.eddn = EDDNController(self)
 
         self.update_pending_for_journal: dict[str, bool] = {}
 
         self._observer = Observer()
         self._observer.daemon = True
-        self._observer.start()
+
+        self.warm_up = True
 
         threading.Thread(target=self._warm_up_journals, daemon=True).start()
 
@@ -86,20 +94,18 @@ class Controller:
             files = os.listdir(journal_dir)
             files = sorted(files)
             journal_files += [
-                os.path.join(journal_dir, i) for i in files if i.endswith(".log")
+                os.path.join(journal_dir, i)
+                for i in files
+                if re.fullmatch(JOURNAL_PATTERN, i)
             ]
 
         print(f"Starting to read journals... {datetime.now(UTC)}")
         for journal_file in journal_files:
             self.journal_reader.update_journal_file(journal_file)
         print(f"Journals processed {datetime.now(UTC)}")
-
-        print(f"Handling startup messages... {datetime.now(UTC)}")
-        # Just catch up before we start handling new stuff
-        self._process_journal_messages()
-        print(f"Finished catching up {datetime.now(UTC)}")
         self.update_active_journals()
-        self.view.set_state("overview")
+        self.warm_up = False
+        self._observer.start()
 
     def _schedule_journal_update(self, journal_path: str):
         self.view.add_callback(self._schedule_debounced_journal_update, journal_path)
@@ -112,17 +118,8 @@ class Controller:
 
     def _update_journal(self, journal_path: str):
         self.journal_reader.update_journal_file(journal_path)
-        self._process_journal_messages()
         self.update_active_journals()
         self.update_pending_for_journal[journal_path] = False
-
-    def _process_journal_messages(self):
-        while True:
-            try:
-                msg = self.journal_reader.unprocessed_journal_entries.get_nowait()
-            except Empty:
-                break
-            self._process_journal_msg(msg)
 
     def _process_journal_msg(self, msg: JournalEntry):
         with Session(engine) as db:
@@ -138,7 +135,6 @@ class Controller:
                     carrier_info.name = msg.entry.root.Name
                 db.add(carrier_info)
                 db.commit()
-                return
 
             if not msg.active:
                 return
@@ -155,9 +151,33 @@ class Controller:
                     name="Unknown CMDR",
                     location=CMDRLocation(root=CMDRLocationUnknown()),
                     last_updated=msg.entry.root.timestamp,
+                    current_ship_slef=Loadout(
+                        timestamp=datetime.now(UTC),
+                        Ship="",
+                        ShipID=0,
+                        ShipName="",
+                        ShipIdent="",
+                        UnladenMass=0,
+                        CargoCapacity=0,
+                        MaxJumpRange=0,
+                        FuelCapacity=FuelCapacity(Main=0.0, Reserve=0.0),
+                        Rebuy=0,
+                        Modules=[],
+                    ),
+                    gameversion="",
+                    gamebuild="",
+                    horizons=True,
+                    odyssey=False,
                 )
 
-            if msg.entry.root.event == JournalEntryKind.Commander:
+            if msg.entry.root.event == JournalEntryKind.Heading:
+                cmdr.gameversion = msg.entry.root.gameversion
+                cmdr.gamebuild = msg.entry.root.build
+                cmdr_updated = True
+            if msg.entry.root.event == JournalEntryKind.LoadGame:
+                cmdr.horizons = msg.entry.root.Horizons
+                cmdr.odyssey = msg.entry.root.Odyssey is True
+            elif msg.entry.root.event == JournalEntryKind.Commander:
                 cmdr.name = msg.entry.root.Name
                 cmdr_updated = True
             elif msg.entry.root.event == JournalEntryKind.Location:
@@ -204,12 +224,17 @@ class Controller:
                         )
                     )
                 cmdr_updated = True
+            elif msg.entry.root.event == JournalEntryKind.Loadout:
+                cmdr.current_ship_slef = msg.entry.root
+                cmdr_updated = True
 
             db.add(cmdr)
             db.commit()
 
             if cmdr_updated and is_selected_cmdr:
                 self.overview._selected_cmdr_updated()
+
+            self.eddn.process_entry(msg)
 
     def _process_fsd_or_carrier_jump(
         self, cmdr: CMDRStatus, fid: str, msg: FSDJump | CarrierJump
@@ -269,13 +294,14 @@ class Controller:
             self.view.overview.cmdr_selector_combobox.configure(values=list(names))
 
             if len(names) == 0:
-                self.view.model.selected_cmdr_name.set("Waiting for game...")
+                self.view.set_state("inactive")
                 return
+            self.view.set_state("overview")
             if len(names) == 1:
                 self.view.model.selected_cmdr_name.set(names[0])
                 return
             if self.view.model.selected_cmdr_name.get() not in names:
-                self.view.model.selected_cmdr_name.set("Select a CMDR...")
+                self.view.model.selected_cmdr_name.set(names[0])
 
     def open_system_on_inara(self, system_name: str):
         params = urllib.parse.urlencode({"search": system_name})

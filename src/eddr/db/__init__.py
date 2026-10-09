@@ -7,6 +7,7 @@ from pydantic import BaseModel, RootModel, TypeAdapter
 from sqlalchemy import Dialect
 from sqlmodel import JSON, Field, SQLModel, TypeDecorator, create_engine
 
+from eddr.journal_schemas.loadout import Loadout
 from eddr.utils import get_app_dir
 
 db_path = os.path.join(get_app_dir(), "eddr.db")
@@ -93,7 +94,13 @@ class CMDRStatus(SQLModel, table=True):
     fid: str = Field(primary_key=True)
     name: str
     location: CMDRLocation = Field(sa_type=PydanticJSON(CMDRLocation))
+    current_ship_slef: Loadout = Field(sa_type=PydanticJSON(Loadout))
     last_updated: datetime
+    silent: bool = Field(default=False)
+    gameversion: str
+    gamebuild: str
+    horizons: bool
+    odyssey: bool
 
 
 class Carrier(SQLModel, table=True):
