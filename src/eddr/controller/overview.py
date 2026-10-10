@@ -1,3 +1,6 @@
+import base64
+import gzip
+import json
 import urllib.parse
 from typing import TYPE_CHECKING
 
@@ -39,14 +42,52 @@ class OverviewController:
         )
 
         self.parent.view.overview.ship_contextmenu.add_command(
-            label="Copy SLEF", command=lambda: print("Not yet")
+            label="Copy SLEF", command=self._copy_ship_slef
         )
         self.parent.view.overview.ship_contextmenu.add_command(
-            label="Open (EDSY)", command=lambda: print("Not yet")
+            label="Open (EDSY)", command=self._open_ship_on_EDSY
         )
         self.parent.view.overview.ship_contextmenu.add_command(
-            label="Open (Coriolis)", command=lambda: print("Not yet")
+            label="Open (Coriolis)", command=self._open_ship_on_coriolis
         )
+
+    def _copy_ship_slef(self):
+        cmdr = self.parent.model.selected_cmdr
+        if not cmdr:
+            return
+
+        slef = {
+            "header": {
+                "appName": "Elite Dangerous Data Reporter",
+                "appVersion": "0.1.0",
+                "appURL": "https://github.com/YuiYukihira/Elite-Dangerous-Data-Reporter",
+            },
+            "data": cmdr.current_ship_slef.model_dump(),
+        }
+
+        self.parent.view.copy_to_clipboard(json.dumps(slef))
+
+    def _open_ship_on_EDSY(self):
+        cmdr = self.parent.model.selected_cmdr
+        if not cmdr:
+            return
+        compressed = gzip.compress(
+            str.encode(cmdr.current_ship_slef.model_dump_json(), encoding="utf-8")
+        )
+        encoded = base64.urlsafe_b64encode(compressed)
+        url_params = urllib.parse.urlencode({"I": encoded.decode("utf-8")})
+        open_file(f"https://edsy.org/#/{url_params}")
+
+    def _open_ship_on_coriolis(self):
+        cmdr = self.parent.model.selected_cmdr
+        if not cmdr:
+            return
+        compressed = gzip.compress(
+            str.encode(cmdr.current_ship_slef.model_dump_json(), encoding="utf-8")
+        )
+        encoded = base64.urlsafe_b64encode(compressed)
+        url_params = urllib.parse.urlencode({"I": encoded.decode("utf-8")})
+        open_file(f"https://coriolis.io/import?{url_params}")
 
     def _open_location_on_inara(self):
         cmdr = self.parent.model.selected_cmdr
