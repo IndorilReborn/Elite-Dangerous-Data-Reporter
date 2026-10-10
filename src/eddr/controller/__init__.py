@@ -16,6 +16,7 @@ from watchdog.events import (
 from watchdog.observers import Observer
 
 from eddr.controller.eddn import EDDNController
+from eddr.controller.find import FindController
 from eddr.controller.overview import OverviewController
 from eddr.db import (
     Carrier,
@@ -74,6 +75,7 @@ class Controller:
 
         self.overview = OverviewController(self)
         self.eddn = EDDNController(self)
+        self.find = FindController(self)
 
         self.update_pending_for_journal: dict[str, bool] = {}
 

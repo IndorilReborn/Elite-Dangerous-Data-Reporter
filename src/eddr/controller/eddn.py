@@ -58,8 +58,6 @@ class EDDNController:
         if msg.entry.root.event == JournalEntryKind.Docked:
             self._send_docked_to_eddn(cmdr, msg.entry.root)
 
-        print(f"Sending {msg.entry.root.event} to EDDN")
-
     def _send_docked_to_eddn(self, cmdr: CMDRStatus, journal_msg: Docked):
         assert cmdr.location.root.location_type != CMDRLocationKind.Unknown
         if journal_msg.StarSystem != cmdr.location.root.system_name:

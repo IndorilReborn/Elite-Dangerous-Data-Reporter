@@ -13,6 +13,8 @@ class Model:
     def __init__(self):
         self.selected_cmdr_name = StringVar(value="Waiting for game...")
 
+        self.find = FindModel()
+
     @property
     def selected_cmdr(self) -> CMDRStatus | None:
         name = self.selected_cmdr_name.get()
@@ -30,3 +32,13 @@ class Model:
                 return None
 
             return f"{carrier.name} ({carrier.callsign})"
+
+
+class FindModel:
+    def __init__(self):
+        self.lookup_type = StringVar(value="Refuel")
+        self.results_system = StringVar(value="")
+        self.results_location = StringVar(value="")
+        self.results_type = ""
+        self.last_search_params = ""
+        self.results_location_ref = ""

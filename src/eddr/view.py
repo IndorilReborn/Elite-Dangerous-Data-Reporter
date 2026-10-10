@@ -78,6 +78,7 @@ class View:
         self.loading_view = LoadingView(self)
         self.inactive_view = InactiveView(self)
         self.overview = OverviewView(self)
+        self.find_view = FindView(self)
 
         self._callbacks: Queue[
             tuple[Callable[..., Any], tuple[Any, ...], dict[str, Any]]
@@ -227,3 +228,70 @@ class OverviewView:
             self.tab, text="Silent Mode", variable=self.silent_on
         )
         self.silent_checkbox.pack(side="top", fill="x", expand=False, padx=5, pady=5)
+
+
+class FindView:
+    def __init__(self, parent: View):
+        self.parent = parent
+
+        self.tab = ttk.Frame(self.parent.tab_controller)
+        self.parent.tab_controller.add(self.tab, text="Find")
+
+        self._lookup_type_frame = ttk.Frame(self.tab)
+        self._lookup_type_frame.pack(side="top", fill="x", expand=False, padx=5, pady=5)
+        self._lookup_type_label = ttk.Label(self._lookup_type_frame, text="Type: ")
+        self._lookup_type_label.pack(side="left", padx=(0, 5))
+        self._lookup_type_combobox = ttk.Combobox(
+            self._lookup_type_frame,
+            textvariable=self.parent.model.find.lookup_type,
+            values=[
+                "Refuel",
+                "RRR",
+                "Material Trader (Encoded)",
+                "Material Trader (Manufactured)",
+                "Material Trader (Raw)",
+                "Tech Broker (Guardian)",
+                "Tech Broker (Human)",
+                "DSSA Carrier",
+                "Exploration Carrier",
+            ],
+        )
+        self._lookup_type_combobox.pack(side="left", fill="x")
+
+        self.find_button = ttk.Button(self.tab, text="Find")
+        self.find_button.pack(side="top", fill="x", expand=False, padx=5, pady=5)
+
+        self.find_progress = ttk.Progressbar(
+            self.tab, orient="horizontal", mode="indeterminate", length=300
+        )
+        self.find_progress.start()
+
+        self.system_frame = ttk.LabelFrame(self.tab, text="System")
+        self._system_label = ttk.Label(
+            self.system_frame, textvariable=self.parent.model.find.results_system
+        )
+        self._system_label.pack(side="top", fill="x", expand=False, padx=5, pady=5)
+        self.system_contextmenu = tk.Menu(self.parent.root, tearoff=0)
+        self.system_frame.bind(
+            "<Button-3>",
+            lambda event: self.system_contextmenu.post(event.x_root, event.y_root),
+        )
+        self._system_label.bind(
+            "<Button-3>",
+            lambda event: self.system_contextmenu.post(event.x_root, event.y_root),
+        )
+
+        self.location_frame = ttk.LabelFrame(self.tab, text="Location")
+        self._location_label = ttk.Label(
+            self.location_frame, textvariable=self.parent.model.find.results_location
+        )
+        self._location_label.pack(side="top", fill="x", expand=False, padx=5, pady=5)
+        self.location_contextmenu = tk.Menu(self.parent.root, tearoff=0)
+        self.location_frame.bind(
+            "<Button-3>",
+            lambda event: self.location_contextmenu.post(event.x_root, event.y_root),
+        )
+        self._location_label.bind(
+            "<Button-3>",
+            lambda event: self.location_contextmenu.post(event.x_root, event.y_root),
+        )

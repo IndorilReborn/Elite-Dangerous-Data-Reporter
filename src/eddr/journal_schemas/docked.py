@@ -7,7 +7,7 @@ from eddr.journal_schemas.base import JournalEntryBase, JournalEntryKind
 
 class Faction(BaseModel):
     Name: str
-    FactionState: str
+    FactionState: str | None = Field(default=None)
 
 
 class Economy(BaseModel):
