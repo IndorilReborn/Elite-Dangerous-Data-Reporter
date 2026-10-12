@@ -6,6 +6,7 @@ from queue import Empty, Queue
 from tkinter import BooleanVar, StringVar, Tk, ttk
 from typing import Any, Literal
 
+from eddr.components import SuggestionBox
 from eddr.models import Model
 
 
@@ -79,6 +80,7 @@ class View:
         self.inactive_view = InactiveView(self)
         self.overview = OverviewView(self)
         self.find_view = FindView(self)
+        self.route_view = RouteView(self)
 
         self._callbacks: Queue[
             tuple[Callable[..., Any], tuple[Any, ...], dict[str, Any]]
@@ -239,7 +241,7 @@ class FindView:
 
         self._lookup_type_frame = ttk.Frame(self.tab)
         self._lookup_type_frame.pack(side="top", fill="x", expand=False, padx=5, pady=5)
-        self._lookup_type_label = ttk.Label(self._lookup_type_frame, text="Type: ")
+        self._lookup_type_label = ttk.Label(self._lookup_type_frame, text="Type:")
         self._lookup_type_label.pack(side="left", padx=(0, 5))
         self._lookup_type_combobox = ttk.Combobox(
             self._lookup_type_frame,
@@ -295,3 +297,43 @@ class FindView:
             "<Button-3>",
             lambda event: self.location_contextmenu.post(event.x_root, event.y_root),
         )
+
+
+class RouteView:
+    def __init__(self, parent: View):
+        self.parent = parent
+
+        self.tab = ttk.Frame(self.parent.tab_controller)
+        self.parent.tab_controller.add(self.tab, text="Route")
+
+        self._destination_frame = ttk.Frame(self.tab)
+        self._destination_frame.pack(side="top", fill="x", expand=False, padx=5, pady=5)
+        self._destination_label = ttk.Label(
+            self._destination_frame, text="Destination:"
+        )
+        self._destination_label.pack(side="left", padx=(0, 5))
+        self.destination_input = SuggestionBox(
+            self._destination_frame, textvariable=self.parent.model.route.destination
+        )
+        self.destination_input.pack(side="left", fill="x", expand=False)
+        self.button = ttk.Button(self.tab, text="Route")
+        self.button.pack(side="top", fill="x", expand=False, padx=5, pady=5)
+
+        self.progress = ttk.Progressbar(
+            self.tab, orient="horizontal", mode="indeterminate", length=300
+        )
+        self.progress.start()
+
+        self.results = ttk.Frame(self.tab)
+        self.next_system_frame = ttk.LabelFrame(self.results, text="Next System")
+        self.next_system_frame.pack(side="top", fill="x", expand=False, padx=5, pady=5)
+        self.next_system = ttk.Label(self.next_system_frame, text="")
+        self.next_system.pack(side="top", fill="x", expand=False, padx=5, pady=5)
+
+        self.jump_counter_frame = ttk.LabelFrame(self.results, text="Progress")
+        self.jump_counter_frame.pack(side="top", fill="x", expand=False, padx=5, pady=5)
+        self.jump_counter = ttk.Label(self.jump_counter_frame, text="")
+        self.jump_counter.pack(side="top", fill="x", expand=False, padx=5, pady=5)
+
+        self.refuel = ttk.Label(self.results, text="⛽ Refuel")
+        self.neutron = ttk.Label(self.results, text="✨ Neutron")

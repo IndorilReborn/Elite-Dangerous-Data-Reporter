@@ -19,6 +19,7 @@ class JournalEntryKind(str, enum.Enum):
     Loadout = "Loadout"
     Market = "Market"
     LoadGame = "LoadGame"
+    Music = "Music"
 
 
 class JournalEntryBase(BaseModel):

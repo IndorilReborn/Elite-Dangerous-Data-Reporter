@@ -18,6 +18,7 @@ from watchdog.observers import Observer
 from eddr.controller.eddn import EDDNController
 from eddr.controller.find import FindController
 from eddr.controller.overview import OverviewController
+from eddr.controller.route import RouteController
 from eddr.db import (
     Carrier,
     CMDRLocation,
@@ -76,6 +77,7 @@ class Controller:
         self.overview = OverviewController(self)
         self.eddn = EDDNController(self)
         self.find = FindController(self)
+        self.route = RouteController(self)
 
         self.update_pending_for_journal: dict[str, bool] = {}
 
@@ -237,6 +239,7 @@ class Controller:
                 self.overview._selected_cmdr_updated()
 
             self.eddn.process_entry(msg)
+            self.route.process_journal_event(msg)
 
     def _process_fsd_or_carrier_jump(
         self, cmdr: CMDRStatus, fid: str, msg: FSDJump | CarrierJump

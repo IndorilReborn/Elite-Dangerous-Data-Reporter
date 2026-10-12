@@ -7,11 +7,16 @@ from eddr.journal_schemas.base import JournalEntryBase, JournalEntryKind
 
 class ControllingFaction(BaseModel):
     Name: str
-    FactionState: str
+    FactionState: str | None = Field(default=None)
 
 
 class ActiveState(BaseModel):
     State: str
+
+
+class PendingState(BaseModel):
+    State: str
+    Trend: float
 
 
 class Faction(BaseModel):
@@ -22,6 +27,7 @@ class Faction(BaseModel):
     Allegiance: str
     Happiness: str
     ActiveStates: list[ActiveState] | None = Field(default=None)
+    PendingStates: list[PendingState] | None = Field(default=None)
 
 
 class ConflictFaction(BaseModel):
@@ -43,11 +49,11 @@ class FSDJump(JournalEntryBase):
     SystemAddress: int
     StarPos: tuple[float, float, float]
     Body: str
-    SystemFaction: ControllingFaction
+    SystemFaction: ControllingFaction | None = Field(default=None)
     SystemAllegiance: str
     SystemEconomy: str
     SystemSecondEconomy: str
     SystemGovernment: str
     SystemSecurity: str
     Population: int
-    Factions: list[Faction]
+    Factions: list[Faction] | None = Field(default=None)

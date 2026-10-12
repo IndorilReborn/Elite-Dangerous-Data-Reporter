@@ -1,0 +1,465 @@
+[
+    {
+        "fsdoptmass": 48.0,
+        "maxfuel": 0.6,
+        "fuelmul": 0.011,
+        "fuelpower": 2.0,
+        "fdname": "Int_Hyperdrive_Size2_Class1"
+    },
+    {
+        "fsdoptmass": 54.0,
+        "maxfuel": 0.6,
+        "fuelmul": 0.01,
+        "fuelpower": 2.0,
+        "fdname": "Int_Hyperdrive_Size2_Class2"
+    },
+    {
+        "fsdoptmass": 60.0,
+        "maxfuel": 0.6,
+        "fuelmul": 0.008,
+        "fuelpower": 2.0,
+        "fdname": "Int_Hyperdrive_Size2_Class3"
+    },
+    {
+        "fsdoptmass": 75.0,
+        "maxfuel": 0.8,
+        "fuelmul": 0.01,
+        "fuelpower": 2.0,
+        "fdname": "Int_Hyperdrive_Size2_Class4"
+    },
+    {
+        "fsdoptmass": 90.0,
+        "maxfuel": 0.9,
+        "fuelmul": 0.012,
+        "fuelpower": 2.0,
+        "fdname": "Int_Hyperdrive_Size2_Class5"
+    },
+    {
+        "fsdoptmass": 90.0,
+        "maxfuel": 1.2,
+        "fuelmul": 0.01,
+        "fuelpower": 2.15,
+        "fdname": "Int_Hyperdrive_Size3_Class2"
+    },
+    {
+        "fsdoptmass": 80.0,
+        "maxfuel": 1.2,
+        "fuelmul": 0.011,
+        "fuelpower": 2.15,
+        "fdname": "Int_Hyperdrive_Size3_Class1"
+    },
+    {
+        "fsdoptmass": 100.0,
+        "maxfuel": 1.2,
+        "fuelmul": 0.008,
+        "fuelpower": 2.15,
+        "fdname": "Int_Hyperdrive_Size3_Class3"
+    },
+    {
+        "fsdoptmass": 125.0,
+        "maxfuel": 1.5,
+        "fuelmul": 0.01,
+        "fuelpower": 2.15,
+        "fdname": "Int_Hyperdrive_Size3_Class4"
+    },
+    {
+        "fsdoptmass": 150.0,
+        "maxfuel": 1.8,
+        "fuelmul": 0.012,
+        "fuelpower": 2.15,
+        "fdname": "Int_Hyperdrive_Size3_Class5"
+    },
+    {
+        "fsdoptmass": 280.0,
+        "maxfuel": 2.0,
+        "fuelmul": 0.011,
+        "fuelpower": 2.3,
+        "fdname": "Int_Hyperdrive_Size4_Class1"
+    },
+    {
+        "fsdoptmass": 315.0,
+        "maxfuel": 2.0,
+        "fuelmul": 0.01,
+        "fuelpower": 2.3,
+        "fdname": "Int_Hyperdrive_Size4_Class2"
+    },
+    {
+        "fsdoptmass": 350.0,
+        "maxfuel": 2.0,
+        "fuelmul": 0.008,
+        "fuelpower": 2.3,
+        "fdname": "Int_Hyperdrive_Size4_Class3"
+    },
+    {
+        "fsdoptmass": 438.0,
+        "maxfuel": 2.5,
+        "fuelmul": 0.01,
+        "fuelpower": 2.3,
+        "fdname": "Int_Hyperdrive_Size4_Class4"
+    },
+    {
+        "fsdoptmass": 525.0,
+        "maxfuel": 3.0,
+        "fuelmul": 0.012,
+        "fuelpower": 2.3,
+        "fdname": "Int_Hyperdrive_Size4_Class5"
+    },
+    {
+        "fsdoptmass": 560.0,
+        "maxfuel": 3.3,
+        "fuelmul": 0.011,
+        "fuelpower": 2.45,
+        "fdname": "Int_Hyperdrive_Size5_Class1"
+    },
+    {
+        "fsdoptmass": 630.0,
+        "maxfuel": 3.3,
+        "fuelmul": 0.01,
+        "fuelpower": 2.45,
+        "fdname": "Int_Hyperdrive_Size5_Class2"
+    },
+    {
+        "fsdoptmass": 700.0,
+        "maxfuel": 3.3,
+        "fuelmul": 0.008,
+        "fuelpower": 2.45,
+        "fdname": "Int_Hyperdrive_Size5_Class3"
+    },
+    {
+        "fsdoptmass": 875.0,
+        "maxfuel": 4.1,
+        "fuelmul": 0.01,
+        "fuelpower": 2.45,
+        "fdname": "Int_Hyperdrive_Size5_Class4"
+    },
+    {
+        "fsdoptmass": 1050.0,
+        "maxfuel": 5.0,
+        "fuelmul": 0.012,
+        "fuelpower": 2.45,
+        "fdname": "Int_Hyperdrive_Size5_Class5"
+    },
+    {
+        "fsdoptmass": 960.0,
+        "maxfuel": 5.3,
+        "fuelmul": 0.011,
+        "fuelpower": 2.6,
+        "fdname": "Int_Hyperdrive_Size6_Class1"
+    },
+    {
+        "fsdoptmass": 1080.0,
+        "maxfuel": 5.3,
+        "fuelmul": 0.01,
+        "fuelpower": 2.6,
+        "fdname": "Int_Hyperdrive_Size6_Class2"
+    },
+    {
+        "fsdoptmass": 1200.0,
+        "maxfuel": 5.3,
+        "fuelmul": 0.008,
+        "fuelpower": 2.6,
+        "fdname": "Int_Hyperdrive_Size6_Class3"
+    },
+    {
+        "fsdoptmass": 1500.0,
+        "maxfuel": 6.6,
+        "fuelmul": 0.01,
+        "fuelpower": 2.6,
+        "fdname": "Int_Hyperdrive_Size6_Class4"
+    },
+    {
+        "fsdoptmass": 1800.0,
+        "maxfuel": 8.0,
+        "fuelmul": 0.012,
+        "fuelpower": 2.6,
+        "fdname": "Int_Hyperdrive_Size6_Class5"
+    },
+    {
+        "fsdoptmass": 1440.0,
+        "maxfuel": 8.5,
+        "fuelmul": 0.011,
+        "fuelpower": 2.75,
+        "fdname": "Int_Hyperdrive_Size7_Class1"
+    },
+    {
+        "fsdoptmass": 1620.0,
+        "maxfuel": 8.5,
+        "fuelmul": 0.01,
+        "fuelpower": 2.75,
+        "fdname": "Int_Hyperdrive_Size7_Class2"
+    },
+    {
+        "fsdoptmass": 1800.0,
+        "maxfuel": 8.5,
+        "fuelmul": 0.008,
+        "fuelpower": 2.75,
+        "fdname": "Int_Hyperdrive_Size7_Class3"
+    },
+    {
+        "fsdoptmass": 2250.0,
+        "maxfuel": 10.6,
+        "fuelmul": 0.01,
+        "fuelpower": 2.75,
+        "fdname": "Int_Hyperdrive_Size7_Class4"
+    },
+    {
+        "fsdoptmass": 2700.0,
+        "maxfuel": 12.8,
+        "fuelmul": 0.012,
+        "fuelpower": 2.75,
+        "fdname": "Int_Hyperdrive_Size7_Class5"
+    },
+    {
+        "fsdoptmass": 60.0,
+        "maxfuel": 0.6,
+        "fuelmul": 0.008,
+        "fuelpower": 2.0,
+        "fdname": "Int_Hyperdrive_Overcharge_Size2_Class1"
+    },
+    {
+        "fsdoptmass": 90.0,
+        "maxfuel": 0.9,
+        "fuelmul": 0.012,
+        "fuelpower": 2.0,
+        "fdname": "Int_Hyperdrive_Overcharge_Size2_Class2"
+    },
+    {
+        "fsdoptmass": 90.0,
+        "maxfuel": 0.9,
+        "fuelmul": 0.012,
+        "fuelpower": 2.0,
+        "fdname": "Int_Hyperdrive_Overcharge_Size2_Class3"
+    },
+    {
+        "fsdoptmass": 90.0,
+        "maxfuel": 0.9,
+        "fuelmul": 0.012,
+        "fuelpower": 2.0,
+        "fdname": "Int_Hyperdrive_Overcharge_Size2_Class4"
+    },
+    {
+        "fsdoptmass": 100.0,
+        "maxfuel": 1.0,
+        "fuelmul": 0.013,
+        "fuelpower": 2.0,
+        "fdname": "Int_Hyperdrive_Overcharge_Size2_Class5"
+    },
+    {
+        "fsdoptmass": 100.0,
+        "maxfuel": 1.2,
+        "fuelmul": 0.008,
+        "fuelpower": 2.15,
+        "fdname": "Int_Hyperdrive_Overcharge_Size3_Class1"
+    },
+    {
+        "fsdoptmass": 150.0,
+        "maxfuel": 1.8,
+        "fuelmul": 0.012,
+        "fuelpower": 2.15,
+        "fdname": "Int_Hyperdrive_Overcharge_Size3_Class2"
+    },
+    {
+        "fsdoptmass": 150.0,
+        "maxfuel": 1.8,
+        "fuelmul": 0.012,
+        "fuelpower": 2.15,
+        "fdname": "Int_Hyperdrive_Overcharge_Size3_Class3"
+    },
+    {
+        "fsdoptmass": 150.0,
+        "maxfuel": 1.8,
+        "fuelmul": 0.012,
+        "fuelpower": 2.15,
+        "fdname": "Int_Hyperdrive_Overcharge_Size3_Class4"
+    },
+    {
+        "fsdoptmass": 167.0,
+        "maxfuel": 1.9,
+        "fuelmul": 0.013,
+        "fuelpower": 2.15,
+        "fdname": "Int_Hyperdrive_Overcharge_Size3_Class5"
+    },
+    {
+        "fsdoptmass": 350.0,
+        "maxfuel": 2.0,
+        "fuelmul": 0.008,
+        "fuelpower": 2.3,
+        "fdname": "Int_Hyperdrive_Overcharge_Size4_Class1"
+    },
+    {
+        "fsdoptmass": 525.0,
+        "maxfuel": 3.0,
+        "fuelmul": 0.012,
+        "fuelpower": 2.3,
+        "fdname": "Int_Hyperdrive_Overcharge_Size4_Class2"
+    },
+    {
+        "fsdoptmass": 525.0,
+        "maxfuel": 3.0,
+        "fuelmul": 0.012,
+        "fuelpower": 2.3,
+        "fdname": "Int_Hyperdrive_Overcharge_Size4_Class3"
+    },
+    {
+        "fsdoptmass": 525.0,
+        "maxfuel": 3.0,
+        "fuelmul": 0.012,
+        "fuelpower": 2.3,
+        "fdname": "Int_Hyperdrive_Overcharge_Size4_Class4"
+    },
+    {
+        "fsdoptmass": 585.0,
+        "maxfuel": 3.2,
+        "fuelmul": 0.013,
+        "fuelpower": 2.3,
+        "fdname": "Int_Hyperdrive_Overcharge_Size4_Class5"
+    },
+    {
+        "fsdoptmass": 700.0,
+        "maxfuel": 3.3,
+        "fuelmul": 0.008,
+        "fuelpower": 2.45,
+        "fdname": "Int_Hyperdrive_Overcharge_Size5_Class1"
+    },
+    {
+        "fsdoptmass": 1050.0,
+        "maxfuel": 5.0,
+        "fuelmul": 0.012,
+        "fuelpower": 2.45,
+        "fdname": "Int_Hyperdrive_Overcharge_Size5_Class2"
+    },
+    {
+        "fsdoptmass": 1050.0,
+        "maxfuel": 5.0,
+        "fuelmul": 0.012,
+        "fuelpower": 2.45,
+        "fdname": "Int_Hyperdrive_Overcharge_Size5_Class3"
+    },
+    {
+        "fsdoptmass": 1050.0,
+        "maxfuel": 5.0,
+        "fuelmul": 0.012,
+        "fuelpower": 2.45,
+        "fdname": "Int_Hyperdrive_Overcharge_Size5_Class4"
+    },
+    {
+        "fsdoptmass": 1175.0,
+        "maxfuel": 5.2,
+        "fuelmul": 0.013,
+        "fuelpower": 2.45,
+        "fdname": "Int_Hyperdrive_Overcharge_Size5_Class5"
+    },
+    {
+        "fsdoptmass": 1200.0,
+        "maxfuel": 5.3,
+        "fuelmul": 0.008,
+        "fuelpower": 2.6,
+        "fdname": "Int_Hyperdrive_Overcharge_Size6_Class1"
+    },
+    {
+        "fsdoptmass": 1800.0,
+        "maxfuel": 8.0,
+        "fuelmul": 0.012,
+        "fuelpower": 2.6,
+        "fdname": "Int_Hyperdrive_Overcharge_Size6_Class2"
+    },
+    {
+        "fsdoptmass": 1800.0,
+        "maxfuel": 8.0,
+        "fuelmul": 0.012,
+        "fuelpower": 2.6,
+        "fdname": "Int_Hyperdrive_Overcharge_Size6_Class3"
+    },
+    {
+        "fsdoptmass": 1800.0,
+        "maxfuel": 8.0,
+        "fuelmul": 0.012,
+        "fuelpower": 2.6,
+        "fdname": "Int_Hyperdrive_Overcharge_Size6_Class4"
+    },
+    {
+        "fsdoptmass": 2000.0,
+        "maxfuel": 8.3,
+        "fuelmul": 0.013,
+        "fuelpower": 2.6,
+        "fdname": "Int_Hyperdrive_Overcharge_Size6_Class5"
+    },
+    {
+        "fsdoptmass": 1800.0,
+        "maxfuel": 8.5,
+        "fuelmul": 0.008,
+        "fuelpower": 2.75,
+        "fdname": "Int_Hyperdrive_Overcharge_Size7_Class1"
+    },
+    {
+        "fsdoptmass": 2700.0,
+        "maxfuel": 12.8,
+        "fuelmul": 0.012,
+        "fuelpower": 2.75,
+        "fdname": "Int_Hyperdrive_Overcharge_Size7_Class2"
+    },
+    {
+        "fsdoptmass": 2700.0,
+        "maxfuel": 12.8,
+        "fuelmul": 0.012,
+        "fuelpower": 2.75,
+        "fdname": "Int_Hyperdrive_Overcharge_Size7_Class3"
+    },
+    {
+        "fsdoptmass": 2700.0,
+        "maxfuel": 12.8,
+        "fuelmul": 0.012,
+        "fuelpower": 2.75,
+        "fdname": "Int_Hyperdrive_Overcharge_Size7_Class4"
+    },
+    {
+        "fsdoptmass": 3000.0,
+        "maxfuel": 13.1,
+        "fuelmul": 0.013,
+        "fuelpower": 2.75,
+        "fdname": "Int_Hyperdrive_Overcharge_Size7_Class5"
+    },
+    {
+        "fsdoptmass": 2800.0,
+        "maxfuel": 13.6,
+        "fuelmul": 0.008,
+        "fuelpower": 2.9,
+        "fdname": "Int_Hyperdrive_Overcharge_Size8_Class1"
+    },
+    {
+        "fsdoptmass": 4200.0,
+        "maxfuel": 20.4,
+        "fuelmul": 0.012,
+        "fuelpower": 2.9,
+        "fdname": "Int_Hyperdrive_Overcharge_Size8_Class2"
+    },
+    {
+        "fsdoptmass": 4200.0,
+        "maxfuel": 20.4,
+        "fuelmul": 0.012,
+        "fuelpower": 2.9,
+        "fdname": "Int_Hyperdrive_Overcharge_Size8_Class3"
+    },
+    {
+        "fsdoptmass": 4200.0,
+        "maxfuel": 20.4,
+        "fuelmul": 0.012,
+        "fuelpower": 2.9,
+        "fdname": "Int_Hyperdrive_Overcharge_Size8_Class4"
+    },
+    {
+        "fsdoptmass": 4670.0,
+        "maxfuel": 20.7,
+        "fuelmul": 0.013,
+        "fuelpower": 2.9,
+        "fdname": "Int_Hyperdrive_Overcharge_Size8_Class5"
+    },
+    {
+        "fsdoptmass": 4670.0,
+        "maxfuel": 6.8,
+        "fuelmul": 0.011,
+        "fuelpower": 2.5025,
+        "fdname": "Int_Hyperdrive_Overcharge_Size8_Class5_Overchargebooster_MkII",
+        "charmul": 6
+    }
+]

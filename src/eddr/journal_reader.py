@@ -119,8 +119,7 @@ class JournalReader:
                 journal_entry = RawJournalEntry.model_validate_json(line.strip())
                 journal_entries.append(journal_entry)
             except ValidationError as e:
-                if "Docked" in line:
-                    print(e)
+                print(e)
                 # pass
                 # journal_entry = json.loads(line)
                 # print(f"WARNING: could not read event: {journal_entry['event']}")

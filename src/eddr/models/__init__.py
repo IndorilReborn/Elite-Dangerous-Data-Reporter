@@ -1,5 +1,6 @@
 from tkinter import StringVar
 
+from pydantic import BaseModel
 from sqlmodel import Session, select
 
 from eddr.db import (
@@ -14,6 +15,7 @@ class Model:
         self.selected_cmdr_name = StringVar(value="Waiting for game...")
 
         self.find = FindModel()
+        self.route = RouteModel(self)
 
     @property
     def selected_cmdr(self) -> CMDRStatus | None:
@@ -42,3 +44,34 @@ class FindModel:
         self.results_type = ""
         self.last_search_params = ""
         self.results_location_ref = ""
+
+
+class RouteSystem(BaseModel):
+    completed: bool
+    system_name: str
+    boost: bool
+    refuel: bool
+
+
+class CMDRRoute(BaseModel):
+    destination: str
+    progress: int
+    route: list[RouteSystem] = []
+
+
+class RouteModel:
+    def __init__(self, parent: Model):
+        self._parent = parent
+        self.destination = StringVar(value="")
+        self.destination_suggestions: dict[str, int] = {}
+        self.routes: dict[str, CMDRRoute] = {}
+
+    @property
+    def current_route(self) -> CMDRRoute | None:
+        cmdr = self._parent.selected_cmdr
+        if not cmdr:
+            return None
+
+        fid = cmdr.fid
+
+        return self.routes.get(fid, None)

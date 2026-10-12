@@ -26,6 +26,7 @@ def main() -> None:
     sv_ttk.use_dark_theme()
     root.title("Elite Dangerous Data Reporter")
     root.geometry(WINDOW_SIZE)
+    root.resizable(width=False, height=False)
 
     journal_dirs = get_journal_paths()
 
