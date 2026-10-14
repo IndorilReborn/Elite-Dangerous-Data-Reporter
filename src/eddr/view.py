@@ -139,10 +139,13 @@ class LoadingView:
         self.loading_label.pack(side="top", expand=False, padx=5, pady=5, anchor="n")
 
         self.progress = ttk.Progressbar(
-            self.frame, orient="horizontal", mode="indeterminate", length=250
+            self.frame, orient="horizontal", mode="determinate", length=250
         )
         self.progress.pack(side="top", fill="x", expand=False, padx=5, pady=5)
-        self.progress.start()
+        self.counter = ttk.Label(self.frame, text="", justify="center")
+        self.counter.pack(side="top", expand=False, padx=5, pady=5, anchor="n")
+        self.last_events = ttk.Label(self.frame, text="", justify="center")
+        self.last_events.pack(side="top", expand=False, padx=5, pady=5, anchor="n")
 
 
 class InactiveView:

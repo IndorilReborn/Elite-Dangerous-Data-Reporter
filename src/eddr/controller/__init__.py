@@ -85,6 +85,7 @@ class Controller:
         self._observer.daemon = True
 
         self.warm_up = True
+        self.last_events = []
 
         threading.Thread(target=self._warm_up_journals, daemon=True).start()
 
@@ -104,7 +105,13 @@ class Controller:
             ]
 
         print(f"Starting to read journals... {datetime.now(UTC)}")
-        for journal_file in journal_files:
+        for index, journal_file in enumerate(journal_files):
+            self.view.loading_view.progress["value"] = (
+                index / len(journal_files)
+            ) * 100
+            self.view.loading_view.counter.configure(
+                text=f"{index}/{len(journal_files)}"
+            )
             self.journal_reader.update_journal_file(journal_file)
         print(f"Journals processed {datetime.now(UTC)}")
         self.update_active_journals()
@@ -126,6 +133,12 @@ class Controller:
         self.update_pending_for_journal[journal_path] = False
 
     def _process_journal_msg(self, msg: JournalEntry):
+        if self.warm_up:
+            self.last_events.append(msg.entry.root.event)
+            self.last_events = self.last_events[-10:]
+            self.view.loading_view.last_events.configure(
+                text="\n".join(self.last_events)
+            )
         with Session(engine) as db:
             if msg.entry.root.event == JournalEntryKind.CarrierStats:
                 carrier_info = db.get(Carrier, msg.entry.root.CarrierID)
