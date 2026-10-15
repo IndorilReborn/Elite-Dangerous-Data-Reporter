@@ -36,6 +36,9 @@ class RouteController:
             on_debounced_keypress=self._get_destination_suggestions
         )
         self.view.button.configure(command=self._get_route)
+        self.parent.model.selected_cmdr_name.trace_add(
+            "write", lambda *args: self.on_cmdr_selected()
+        )
 
         self._fsd_info = {}
         with open(get_resource_path(os.path.join("data", "fsds.json"))) as f:
@@ -51,10 +54,14 @@ class RouteController:
             or event.entry.root.event == JournalEntryKind.CarrierJump
         ):
             new_system = event.entry.root.StarSystem
-            self._update_route_progress(new_system)
+            self._update_route_progress(event.fid, new_system)
         elif event.entry.root.event == JournalEntryKind.Music:
             if event.entry.root.MusicTrack == "GalaxyMap":
-                self._copy_next_route_system()
+                self._copy_next_route_system(event.fid)
+
+    def _is_selected_cmdr(self, fid: str) -> bool:
+        cmdr = self.parent.model.selected_cmdr
+        return cmdr is not None and cmdr.fid == fid
 
     def on_cmdr_selected(self):
         route = self.model.current_route
@@ -63,63 +70,67 @@ class RouteController:
         self.view.refuel.pack_forget()
         self.view.neutron.pack_forget()
 
-        if route:
-            self.view.destination_input.configure(value=route.destination)
-            self.view.results.pack(side="top", fill="x", expand=False)
-            self.view.next_system.configure(
-                text=route.route[route.progress + 1].system_name
-            )
-            if route.route[route.progress].refuel:
-                self.view.refuel.pack(side="top", fill="x", padx=5, pady=5)
-            if route.route[route.progress].boost:
-                self.view.neutron.pack(side="top", fill="x", padx=5, pady=5)
-
-    def _copy_next_route_system(self):
-        if not self.model.current_route:
+        if not route:
+            self.model.destination.set("")
             return
 
-        next_system = self.model.current_route.route[
-            self.model.current_route.progress + 1
-        ].system_name
+        self.model.destination.set(route.destination)
+        self.view.results.pack(side="top", fill="x", expand=False)
+        self.view.jump_counter.configure(
+            text=f"{route.progress}/{len(route.route) - 1}"
+        )
+        self.view.next_system.configure(
+            text=route.route[route.progress + 1].system_name
+        )
+        if route.route[route.progress].refuel:
+            self.view.refuel.pack(side="top", fill="x", padx=5, pady=5)
+        if route.route[route.progress].boost:
+            self.view.neutron.pack(side="top", fill="x", padx=5, pady=5)
+
+    def _copy_next_route_system(self, fid: str):
+        route = self.model.routes.get(fid)
+        if not route or not self._is_selected_cmdr(fid):
+            return
+
+        next_system = route.route[route.progress + 1].system_name
         self.view.parent.copy_to_clipboard(next_system)
 
-    def _update_route_progress(self, current_system_name: str):
-        if not self.model.current_route:
+    def _update_route_progress(self, fid: str, current_system_name: str):
+        route = self.model.routes.get(fid)
+        if not route:
             return
 
-        if (
-            self.model.current_route.route[
-                self.model.current_route.progress + 1
-            ].system_name
-            != current_system_name
-        ):
+        if route.route[route.progress + 1].system_name != current_system_name:
             return
 
-        self.model.current_route.progress += 1
+        route.progress += 1
+        is_selected = self._is_selected_cmdr(fid)
 
-        if self.model.current_route.progress == len(self.model.current_route.route) - 1:
-            self.view.results.pack_forget()
-            self.view.refuel.pack_forget()
-            self.view.neutron.pack_forget()
-            cmdr = self.model._parent.selected_cmdr
-            assert cmdr is not None
-            del self.model.routes[cmdr.fid]
+        if route.progress == len(route.route) - 1:
+            del self.model.routes[fid]
+            if is_selected:
+                self.view.results.pack_forget()
+                self.view.refuel.pack_forget()
+                self.view.neutron.pack_forget()
+            return
+
+        if not is_selected:
             return
 
         self.view.neutron.pack_forget()
         self.view.refuel.pack_forget()
 
         self.view.jump_counter.configure(
-            text=f"{self.model.current_route.progress}/{len(self.model.current_route.route) - 1}"
+            text=f"{route.progress}/{len(route.route) - 1}"
         )
         self.view.next_system.configure(
-            text=f"{self.model.current_route.route[self.model.current_route.progress + 1].system_name}"
+            text=f"{route.route[route.progress + 1].system_name}"
         )
 
-        if self.model.current_route.route[self.model.current_route.progress].refuel:
+        if route.route[route.progress].refuel:
             self.view.refuel.pack(side="top", fill="x", expand=False, padx=5, pady=5)
 
-        if self.model.current_route.route[self.model.current_route.progress].boost:
+        if route.route[route.progress].boost:
             self.view.neutron.pack(side="top", fill="x", expand=False, padx=5, pady=5)
 
     def _get_route(self):
