@@ -39,7 +39,9 @@ def main() -> None:
 def migrate_database():
     print("Running DB migrations...")
     alembic_cfg = Config(get_resource_path("alembic.ini"))
-    alembic_cfg.set_main_option("script_location", "src/eddr/alembic")
+    alembic_cfg.set_main_option(
+        "script_location", get_resource_path("src/eddr/alembic")
+    )
     alembic_cfg.set_main_option("sqlalchemy.url", f"sqlite:///{db_path}")
     command.upgrade(alembic_cfg, "head")
     print("Done")
