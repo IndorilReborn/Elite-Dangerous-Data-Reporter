@@ -276,7 +276,7 @@ class Controller:
                     market_id=cast(int, msg.MarketID),
                 )
             )
-        elif msg.Docked and msg.StationType == "Station":
+        elif msg.Docked:
             cmdr.location = CMDRLocation(
                 root=CMDRLocationStation(
                     system_name=msg.StarSystem,
