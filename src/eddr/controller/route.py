@@ -40,6 +40,8 @@ class RouteController:
             "write", lambda *args: self.on_cmdr_selected()
         )
 
+        self.suggestion_counter = 0
+
         self._fsd_info = {}
         with open(get_resource_path(os.path.join("data", "fsds.json"))) as f:
             data = json.load(f)
@@ -315,6 +317,7 @@ class RouteController:
         }
 
         def fetch():
+            counter = self.suggestion_counter
             res = requests.post(
                 "https://www.spansh.co.uk/api/systems/search/save",
                 timeout=30,
@@ -337,6 +340,10 @@ class RouteController:
             res = res.json()["results"]
 
             def update_ui():
+                if counter < self.suggestion_counter:
+                    return
+
+                self.suggestion_counter += 1
                 self.model.destination_suggestions = {
                     entry["name"].lower(): entry["id64"] for entry in res
                 }
