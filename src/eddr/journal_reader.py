@@ -118,9 +118,8 @@ class JournalReader:
             try:
                 journal_entry = RawJournalEntry.model_validate_json(line.strip())
                 journal_entries.append(journal_entry)
-            except ValidationError as e:
-                print(e)
-                # pass
+            except ValidationError:
+                pass
                 # journal_entry = json.loads(line)
                 # print(f"WARNING: could not read event: {journal_entry['event']}")
         return journal_entries

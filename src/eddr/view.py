@@ -8,6 +8,7 @@ from typing import Any, Literal
 
 from eddr.components import SuggestionBox
 from eddr.models import Model
+from eddr.utils import get_resource_path
 
 
 class View:
@@ -67,6 +68,11 @@ class View:
         # Topbar
         self.top_bar = ttk.Frame(self.root)
         self.top_bar.pack(side="top", fill="x")
+
+        # Version
+        with open(get_resource_path("VERSION")) as f:
+            self.version = ttk.Label(self.top_bar, text=f.read())
+        self.version.pack(side="left", anchor="nw")
 
         # Clock
         self.clock_utc = ttk.Label(self.top_bar, width=8)

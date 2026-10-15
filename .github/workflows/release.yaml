@@ -36,7 +36,7 @@ jobs:
         id: check_version_file
         run: |
           echo "Checking if VERSION file matches tag version..."
-          if [ "$(cat src/eddr/VERSION)" != "${{ steps.version.outputs.full }}" ]; then
+          if [ "$(cat VERSION)" != "${{ steps.version.outputs.full }}" ]; then
             echo "VERSION file does not match tag version!"
             exit 1
           fi

@@ -6,7 +6,7 @@ a = Analysis(
     ['src/eddr/main.py'],
     pathex=[],
     binaries=[],
-    datas=[('alembic.ini', '.'), ('data/fsds.json', './data')],
+    datas=[('alembic.ini', '.'), ('data/fsds.json', './data'), ('VERSION', '.')],
     hiddenimports=['sv_ttk', 'humanize', 'requests', 'alembic', 'logging.config'],
     hookspath=[],
     hooksconfig={},

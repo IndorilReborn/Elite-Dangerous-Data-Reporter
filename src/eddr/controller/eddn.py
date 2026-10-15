@@ -12,6 +12,7 @@ from eddr.journal_schemas.base import JournalEntryKind
 from eddr.journal_schemas.docked import Docked
 from eddr.journal_schemas.fsd_jump import FSDJump
 from eddr.journal_schemas.market import Market, MarketFileEntry
+from eddr.utils import get_resource_path
 
 if TYPE_CHECKING:
     from eddr.controller import Controller
@@ -20,6 +21,9 @@ if TYPE_CHECKING:
 class EDDNController:
     def __init__(self, parent: "Controller"):
         self.parent = parent
+
+        with open(get_resource_path("VERSION")) as f:
+            self.version = f.read()
 
         self.eddn_queue: Queue[dict[str, Any]] = Queue()
 
@@ -75,7 +79,7 @@ class EDDNController:
                 "gameversion": cmdr.gameversion,
                 "gamebuild": cmdr.gamebuild,
                 "softwareName": "Elite Dangerous Data Reporter",
-                "softwareVersion": "0.1.0",
+                "softwareVersion": self.version,
             },
             "message": msg_dict,
         }
@@ -93,7 +97,7 @@ class EDDNController:
                 "gameversion": cmdr.gameversion,
                 "gamebuild": cmdr.gamebuild,
                 "softwareName": "Elite Dangerous Data Reporter",
-                "softwareVersion": "0.1.0",
+                "softwareVersion": self.version,
             },
             "message": msg_dict,
         }
@@ -140,7 +144,7 @@ class EDDNController:
                 "gameversion": cmdr.gameversion,
                 "gamebuild": cmdr.gamebuild,
                 "softwareName": "Elite Dangerous Data Reporter",
-                "softwareVersion": "0.1.0",
+                "softwareVersion": self.version,
             },
             "message": {
                 "horizons": cmdr.horizons,
