@@ -6,6 +6,7 @@ import urllib.parse
 from datetime import UTC, datetime
 from typing import cast
 
+import requests
 from sqlmodel import Session, col, select
 from watchdog.events import (
     DirCreatedEvent,
@@ -37,8 +38,8 @@ from eddr.journal_schemas.fsd_jump import FSDJump
 from eddr.journal_schemas.loadout import FuelCapacity, Loadout
 from eddr.journal_schemas.location import Location
 from eddr.models import Model
-from eddr.utils import open_file
-from eddr.view import View
+from eddr.utils import APP_VERSION, open_file, parse_version_str
+from eddr.view import ConfirmationPopup, View
 
 JOURNAL_PATTERN = r"Journal\.\d{4}-\d{2}-\d{2}T\d{6}\.\d{2}\.log$"
 
@@ -88,7 +89,39 @@ class Controller:
         self.warm_up = True
         self.last_events = []
 
+        self._check_version()
+
         threading.Thread(target=self._warm_up_journals, daemon=True).start()
+
+    def _check_version(self):
+        try:
+            res = requests.get(
+                "https://api.github.com/repos/YuiYukihira/Elite-Dangerous-Data-Reporter/releases/latest"
+            )
+            res.raise_for_status()
+        except requests.RequestException as e:
+            print(f"Error: Could not get latest version: {e}")
+            return
+        latest_version_str = res.json().get("tag_name")
+        if not isinstance(latest_version_str, str):
+            return
+        latest_version = parse_version_str(latest_version_str)
+        if not latest_version:
+            return
+
+        if APP_VERSION < latest_version:
+
+            def _open_release_page():
+                open_file(
+                    "https://github.com/YuiYukihira/Elite-Dangerous-Data-Reporter/releases/latest"
+                )
+
+            ConfirmationPopup(
+                self.view.root,
+                "Update Available",
+                f"New version available: {latest_version}\nGo to release page?",
+                _open_release_page,
+            )
 
     def _warm_up_journals(self):
         try:
@@ -128,7 +161,9 @@ class Controller:
             try:
                 self.journal_reader.update_journal_file(journal_file)
             except Exception:
-                print(f"Exception while reading {journal_file}:\n{traceback.format_exc()}")
+                print(
+                    f"Exception while reading {journal_file}:\n{traceback.format_exc()}"
+                )
         print(f"Journals processed {datetime.now(UTC)}")
 
     def _schedule_journal_update(self, journal_path: str):

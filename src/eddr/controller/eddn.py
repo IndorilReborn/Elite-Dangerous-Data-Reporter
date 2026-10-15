@@ -12,7 +12,7 @@ from eddr.journal_schemas.base import JournalEntryKind
 from eddr.journal_schemas.docked import Docked
 from eddr.journal_schemas.fsd_jump import FSDJump
 from eddr.journal_schemas.market import Market, MarketFileEntry
-from eddr.utils import get_resource_path
+from eddr.utils import APP_VERSION
 
 if TYPE_CHECKING:
     from eddr.controller import Controller
@@ -21,9 +21,6 @@ if TYPE_CHECKING:
 class EDDNController:
     def __init__(self, parent: "Controller"):
         self.parent = parent
-
-        with open(get_resource_path("VERSION")) as f:
-            self.version = f.read()
 
         self.eddn_queue: Queue[dict[str, Any]] = Queue()
 
@@ -64,6 +61,16 @@ class EDDNController:
         if msg.entry.root.event == JournalEntryKind.Docked:
             self._send_docked_to_eddn(cmdr, msg.entry.root)
 
+    @staticmethod
+    def _get_header(cmdr: CMDRStatus) -> dict:
+        return {
+            "uploaderID": cmdr.name,
+            "gameversion": cmdr.gameversion,
+            "gamebuild": cmdr.gamebuild,
+            "softwareName": "Elite Dangerous Data Reporter",
+            "softwareVersion": str(APP_VERSION),
+        }
+
     def _send_docked_to_eddn(self, cmdr: CMDRStatus, journal_msg: Docked):
         assert cmdr.location.root.location_type != CMDRLocationKind.Unknown
         if journal_msg.StarSystem != cmdr.location.root.system_name:
@@ -79,13 +86,7 @@ class EDDNController:
 
         docked_msg = {
             "$schemaRef": "https://eddn.edcd.io/schemas/journal/1",
-            "header": {
-                "uploaderID": cmdr.name,
-                "gameversion": cmdr.gameversion,
-                "gamebuild": cmdr.gamebuild,
-                "softwareName": "Elite Dangerous Data Reporter",
-                "softwareVersion": self.version,
-            },
+            "header": self._get_header(cmdr),
             "message": msg_dict,
         }
 
@@ -99,13 +100,7 @@ class EDDNController:
 
         jump_msg = {
             "$schemaRef": "https://eddn.edcd.io/schemas/journal/1",
-            "header": {
-                "uploaderID": cmdr.name,
-                "gameversion": cmdr.gameversion,
-                "gamebuild": cmdr.gamebuild,
-                "softwareName": "Elite Dangerous Data Reporter",
-                "softwareVersion": self.version,
-            },
+            "header": self._get_header(cmdr),
             "message": msg_dict,
         }
 
@@ -146,13 +141,7 @@ class EDDNController:
 
         market_msg = {
             "$schemaRef": "https://eddn.edcd.io/schemas/commodity/3",
-            "header": {
-                "uploaderID": cmdr.name,
-                "gameversion": cmdr.gameversion,
-                "gamebuild": cmdr.gamebuild,
-                "softwareName": "Elite Dangerous Data Reporter",
-                "softwareVersion": self.version,
-            },
+            "header": self._get_header(cmdr),
             "message": {
                 "horizons": cmdr.horizons,
                 "odyssey": cmdr.odyssey,

@@ -5,7 +5,7 @@ import urllib.parse
 from typing import TYPE_CHECKING
 
 from eddr.db import CMDRLocationKind
-from eddr.utils import get_resource_path, open_file
+from eddr.utils import APP_VERSION, open_file
 
 if TYPE_CHECKING:
     from eddr.controller import Controller
@@ -56,13 +56,10 @@ class OverviewController:
         if not cmdr:
             return
 
-        with open(get_resource_path("VERSION")) as f:
-            app_version = f.read().strip()
-
         slef = {
             "header": {
                 "appName": "Elite Dangerous Data Reporter",
-                "appVersion": app_version,
+                "appVersion": str(APP_VERSION),
                 "appURL": "https://github.com/YuiYukihira/Elite-Dangerous-Data-Reporter",
             },
             "data": cmdr.current_ship_slef.model_dump(mode="json"),
