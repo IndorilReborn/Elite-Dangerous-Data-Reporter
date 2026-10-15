@@ -2,6 +2,7 @@ import json
 import os
 import threading
 import time
+import traceback
 from typing import TYPE_CHECKING
 
 import requests
@@ -123,7 +124,9 @@ class RouteController:
 
     def _get_route(self):
         destination = self.model.destination.get()
-        destination_id = self.model.destination_suggestions[destination.lower()]
+        destination_id = self.model.destination_suggestions.get(destination.lower())
+        if destination_id is None:
+            return
 
         cmdr = self.parent.model.selected_cmdr
         if not cmdr:
@@ -202,7 +205,9 @@ class RouteController:
             }
 
             res = requests.post(
-                "https://www.spansh.co.uk/api/generic/route", data=route_params
+                "https://www.spansh.co.uk/api/generic/route",
+                data=route_params,
+                timeout=30,
             )
             if res.status_code != 200 and res.status_code != 202:
                 raise Exception(f"Spansh didn't like that: {res.text}")
@@ -211,7 +216,8 @@ class RouteController:
 
             while True:
                 res = requests.get(
-                    f"https://www.spansh.co.uk/api/results/{route_identifier}"
+                    f"https://www.spansh.co.uk/api/results/{route_identifier}",
+                    timeout=30,
                 )
                 if res.status_code == 202:
                     time.sleep(5)
@@ -222,6 +228,8 @@ class RouteController:
 
             res = res.json()
             route = res["result"]["jumps"]
+            if len(route) < 2:
+                return
             for entry in route:
                 entry["completed"] = False
             route[0]["completed"] = True
@@ -257,7 +265,17 @@ class RouteController:
                     side="top", fill="x", expand=False, padx=5, pady=5
                 )
 
-        threading.Thread(target=route, daemon=True).start()
+        threading.Thread(target=self._run_route, args=(route,), daemon=True).start()
+
+    def _run_route(self, fn):
+        try:
+            fn()
+        except Exception:
+            traceback.print_exc()
+        finally:
+            self.view.progress.pack_forget()
+            self.view.destination_input.configure(state="normal")
+            self.view.button.configure(state="normal")
 
     def _get_destination_suggestions(self) -> bool:
         search_phrase = self.model.destination.get()
@@ -281,6 +299,7 @@ class RouteController:
         res = requests.post(
             "https://www.spansh.co.uk/api/systems/search/save",
             data=json.dumps(search_string),
+            timeout=30,
         )
         if res.status_code != 200:
             raise Exception(f"Spansh didn't like that: {res.text}")
@@ -289,7 +308,8 @@ class RouteController:
         ref_string = res["search_reference"]
 
         res = requests.get(
-            f"https://www.spansh.co.uk/api/systems/search/recall/{ref_string}"
+            f"https://www.spansh.co.uk/api/systems/search/recall/{ref_string}",
+            timeout=30,
         )
 
         if res.status_code != 200:
