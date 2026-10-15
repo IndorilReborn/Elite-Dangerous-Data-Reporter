@@ -55,6 +55,8 @@ class EDDNController:
                 market_entry = MarketFileEntry.model_validate_json(f.read())
             if market_entry is None:
                 return
+            if market_entry.MarketID != msg.entry.root.MarketID:
+                return
 
             self._send_market(cmdr, msg.entry.root, market_entry)
         if msg.entry.root.event == JournalEntryKind.FSDJump:
@@ -71,6 +73,9 @@ class EDDNController:
 
         msg_dict = journal_msg.model_dump()
         msg_dict["timestamp"] = msg_dict["timestamp"].isoformat()
+        msg_dict["StarPos"] = list(cmdr.location.root.system_coords)
+        msg_dict["horizons"] = cmdr.horizons
+        msg_dict["odyssey"] = cmdr.odyssey
 
         docked_msg = {
             "$schemaRef": "https://eddn.edcd.io/schemas/journal/1",
@@ -89,6 +94,8 @@ class EDDNController:
     def _send_fsd_jump_to_eddn(self, cmdr: CMDRStatus, journal_msg: FSDJump):
         msg_dict = journal_msg.model_dump()
         msg_dict["timestamp"] = msg_dict["timestamp"].isoformat()
+        msg_dict["horizons"] = cmdr.horizons
+        msg_dict["odyssey"] = cmdr.odyssey
 
         jump_msg = {
             "$schemaRef": "https://eddn.edcd.io/schemas/journal/1",
