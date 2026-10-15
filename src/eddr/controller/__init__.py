@@ -105,16 +105,16 @@ class Controller:
             ]
 
         print(f"Starting to read journals... {datetime.now(UTC)}")
+
+        def update_progress(index: int, total: int):
+            self.view.loading_view.progress["value"] = (index / total) * 100
+            self.view.loading_view.counter.configure(text=f"{index}/{total}")
+
         for index, journal_file in enumerate(journal_files):
-            self.view.loading_view.progress["value"] = (
-                index / len(journal_files)
-            ) * 100
-            self.view.loading_view.counter.configure(
-                text=f"{index}/{len(journal_files)}"
-            )
+            self.view.add_callback(update_progress, index, len(journal_files))
             self.journal_reader.update_journal_file(journal_file)
         print(f"Journals processed {datetime.now(UTC)}")
-        self.update_active_journals()
+        self.view.add_callback(self.update_active_journals)
         self.warm_up = False
         self._observer.start()
 
@@ -136,8 +136,9 @@ class Controller:
         if self.warm_up:
             self.last_events.append(msg.entry.root.event)
             self.last_events = self.last_events[-10:]
-            self.view.loading_view.last_events.configure(
-                text="\n".join(self.last_events)
+            self.view.add_callback(
+                self.view.loading_view.last_events.configure,
+                text="\n".join(self.last_events),
             )
         with Session(engine) as db:
             if msg.entry.root.event == JournalEntryKind.CarrierStats:
@@ -249,7 +250,7 @@ class Controller:
             db.commit()
 
             if cmdr_updated and is_selected_cmdr:
-                self.overview._selected_cmdr_updated()
+                self.view.add_callback(self.overview._selected_cmdr_updated)
 
             self.eddn.process_entry(msg)
             self.route.process_journal_event(msg)
