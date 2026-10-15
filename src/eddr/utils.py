@@ -3,7 +3,7 @@ import sys
 import subprocess
 
 
-def get_default_journal_dir() -> str:
+def get_default_journal_dir() -> str | None:
     if sys.platform == "win32":
         user_path = os.environ.get("USERPROFILE")
         assert user_path is not None
@@ -28,8 +28,7 @@ def get_default_journal_dir() -> str:
             "Frontier Developments",
             "Elite Dangerous",
         )
-    else:
-        raise NotImplementedError(f"Your os ({sys.platform}) is not supported")
+    return None
 
 
 def get_app_dir() -> str:
