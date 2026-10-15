@@ -15,6 +15,15 @@ from eddr.utils import get_resource_path
 if TYPE_CHECKING:
     from eddr.controller import Controller
 
+# Guardian FSD booster jump range boost (ly) by module item
+GUARDIAN_FSD_BOOST = {
+    "int_guardianfsdbooster_size1": 4.0,
+    "int_guardianfsdbooster_size2": 6.0,
+    "int_guardianfsdbooster_size3": 7.75,
+    "int_guardianfsdbooster_size4": 9.25,
+    "int_guardianfsdbooster_size5": 10.5,
+}
+
 
 class RouteController:
     def __init__(self, parent: "Controller"):
@@ -146,13 +155,22 @@ class RouteController:
             fsd_supercharge_multiplier = fsd_info.get("charmul", 4)
 
             if fsd_engineering := fsd_module.Engineering:
-                optimalmass = [
-                    modifier
-                    for modifier in fsd_engineering.Modifiers
-                    if modifier.Label == "FSDOptimalMass"
-                ]
-                if optimalmass:
-                    fsd_optimal_mass = optimalmass[0].Value
+                for modifier in fsd_engineering.Modifiers:
+                    if modifier.Value is None:
+                        continue
+                    if modifier.Label.lower() == "fsdoptimalmass":
+                        fsd_optimal_mass = modifier.Value
+                    elif modifier.Label.lower() == "maxfuelperjump":
+                        fsd_max_fuel = modifier.Value
+
+            range_boost = next(
+                (
+                    GUARDIAN_FSD_BOOST.get(module.Item.lower(), 0)
+                    for module in cmdr.current_ship_slef.Modules
+                    if module.Item.lower().startswith("int_guardianfsdbooster")
+                ),
+                0,
+            )
 
             route_params = {
                 "source": str(start_id),
@@ -174,12 +192,12 @@ class RouteController:
                 "internal_tank_size": str(cmdr.current_ship_slef.FuelCapacity.Reserve),
                 "reserve_size": "0",
                 "max_fuel_per_jump": str(fsd_max_fuel),
-                "range_boost": "10.5",
+                "range_boost": str(range_boost),
                 "ship_build": cmdr.current_ship_slef.model_dump_json(),
                 "max_time": "60",
                 "cargo": "0",
                 "algorithm": "optimistic",
-                "supercharge_mutliplier": fsd_supercharge_multiplier,
+                "supercharge_multiplier": str(fsd_supercharge_multiplier),
                 "injection_multiplier": "2",
             }
 
