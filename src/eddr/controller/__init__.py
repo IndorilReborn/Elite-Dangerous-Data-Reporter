@@ -1,6 +1,7 @@
 import os
 import re
 import threading
+import traceback
 import urllib.parse
 from datetime import UTC, datetime
 from typing import cast
@@ -90,6 +91,18 @@ class Controller:
         threading.Thread(target=self._warm_up_journals, daemon=True).start()
 
     def _warm_up_journals(self):
+        try:
+            self._read_all_journals()
+        except Exception:
+            print(f"Exception while warming up journals:\n{traceback.format_exc()}")
+        finally:
+            self.warm_up = False
+            try:
+                self.update_active_journals()
+            finally:
+                self._observer.start()
+
+    def _read_all_journals(self):
         handler = JournalEventHandler(self)
 
         journal_files = []
@@ -112,11 +125,11 @@ class Controller:
             self.view.loading_view.counter.configure(
                 text=f"{index}/{len(journal_files)}"
             )
-            self.journal_reader.update_journal_file(journal_file)
+            try:
+                self.journal_reader.update_journal_file(journal_file)
+            except Exception:
+                print(f"Exception while reading {journal_file}:\n{traceback.format_exc()}")
         print(f"Journals processed {datetime.now(UTC)}")
-        self.update_active_journals()
-        self.warm_up = False
-        self._observer.start()
 
     def _schedule_journal_update(self, journal_path: str):
         self.view.add_callback(self._schedule_debounced_journal_update, journal_path)
@@ -128,9 +141,11 @@ class Controller:
         self.view.add_callback(self._update_journal, journal_path)
 
     def _update_journal(self, journal_path: str):
-        self.journal_reader.update_journal_file(journal_path)
-        self.update_active_journals()
-        self.update_pending_for_journal[journal_path] = False
+        try:
+            self.journal_reader.update_journal_file(journal_path)
+            self.update_active_journals()
+        finally:
+            self.update_pending_for_journal[journal_path] = False
 
     def _process_journal_msg(self, msg: JournalEntry):
         if self.warm_up:

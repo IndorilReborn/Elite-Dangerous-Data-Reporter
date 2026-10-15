@@ -1,4 +1,5 @@
 import os
+import traceback
 from collections.abc import Callable
 from typing import Any, BinaryIO
 
@@ -68,7 +69,7 @@ class JournalReader:
                         db_journal_file.active = is_active
 
                         for journal_entry in journal_entries:
-                            self.callback(
+                            self._dispatch(
                                 JournalEntry(
                                     entry=journal_entry,
                                     fid=db_journal_file.fid,
@@ -102,7 +103,7 @@ class JournalReader:
                 db.commit()
 
                 for journal_entry in journal_entries:
-                    self.callback(
+                    self._dispatch(
                         JournalEntry(
                             entry=journal_entry,
                             fid=fid,
@@ -110,6 +111,12 @@ class JournalReader:
                             journal_file=journal_file,
                         )
                     )
+
+    def _dispatch(self, journal_entry: JournalEntry):
+        try:
+            self.callback(journal_entry)
+        except Exception:
+            print(f"Exception while processing journal entry:\n{traceback.format_exc()}")
 
     @staticmethod
     def _read_complete_lines(file: BinaryIO) -> tuple[list[str], int]:
