@@ -163,10 +163,19 @@ class EDDNController:
     def _process_eddn_queue(self):
         while True:
             item = self.eddn_queue.get()
-            self._send_to_eddn(item)
+            try:
+                self._send_to_eddn(item)
+            except Exception as e:
+                print(f"Unexpected error uploading to EDDN: {e!r}")
 
     def _send_to_eddn(self, item: dict):
-        r = requests.post("https://eddn.edcd.io:4430/upload/", json=item)
+        try:
+            r = requests.post(
+                "https://eddn.edcd.io:4430/upload/", json=item, timeout=10
+            )
+        except requests.RequestException as e:
+            print(f"Error uploading to EDDN: {e!r}")
+            return
         if r.status_code != 200:
             print(f"Error uploading to EDDN: {r.text}")
 
