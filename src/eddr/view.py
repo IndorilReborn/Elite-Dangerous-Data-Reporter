@@ -184,6 +184,7 @@ class OverviewView:
             self._cmdr_selector_frame,
             textvariable=self.parent.model.selected_cmdr_name,
             values=[],
+            state="readonly",
         )
         self.cmdr_selector_combobox.pack(side="left", fill="x", expand=False)
 
@@ -218,7 +219,7 @@ class OverviewView:
         )
 
         self.location_name = StringVar(value="")
-        self.location_frame = ttk.LabelFrame(self.tab, text="System")
+        self.location_frame = ttk.LabelFrame(self.tab, text="Location")
         self.location_frame.pack(side="top", fill="x", expand=False, padx=5, pady=5)
         self._location_label = ttk.Label(
             self.location_frame, textvariable=self.location_name

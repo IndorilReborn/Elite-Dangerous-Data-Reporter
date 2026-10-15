@@ -55,11 +55,11 @@ class JournalEventHandler(FileSystemEventHandler):
         | FileCreatedEvent,
     ) -> None:
         assert isinstance(event.src_path, str)
-        print(f"file updated: {event.src_path}")
         if event.is_directory:
             return
-        if not event.src_path.endswith(".log"):
+        if not re.fullmatch(JOURNAL_PATTERN, os.path.basename(event.src_path)):
             return
+        print(f"file updated: {event.src_path}")
         self.controller._schedule_journal_update(event.src_path)
 
     def on_created(self, event: DirCreatedEvent | FileCreatedEvent) -> None:

@@ -69,7 +69,8 @@ def get_journal_paths() -> list[str]:
         if not journal_paths:
             journal_paths = None
     else:
-        journal_paths = [get_default_journal_dir()]
+        default_dir = get_default_journal_dir()
+        journal_paths = [default_dir] if default_dir is not None else None
     assert journal_paths is not None, (
         f"No default journal path for platform {sys.platform}, please specify one with --paths or the EDDR_JOURNAL_PATHS env var"
     )
