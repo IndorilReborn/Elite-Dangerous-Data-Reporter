@@ -2,6 +2,7 @@ import json
 import os
 import threading
 import time
+import traceback
 from typing import TYPE_CHECKING
 
 import requests
@@ -15,6 +16,15 @@ from eddr.utils import get_resource_path
 if TYPE_CHECKING:
     from eddr.controller import Controller
 
+# Guardian FSD booster jump range boost (ly) by module item
+GUARDIAN_FSD_BOOST = {
+    "int_guardianfsdbooster_size1": 4.0,
+    "int_guardianfsdbooster_size2": 6.0,
+    "int_guardianfsdbooster_size3": 7.75,
+    "int_guardianfsdbooster_size4": 9.25,
+    "int_guardianfsdbooster_size5": 10.5,
+}
+
 
 class RouteController:
     def __init__(self, parent: "Controller"):
@@ -26,6 +36,9 @@ class RouteController:
             on_debounced_keypress=self._get_destination_suggestions
         )
         self.view.button.configure(command=self._get_route)
+        self.parent.model.selected_cmdr_name.trace_add(
+            "write", lambda *args: self.on_cmdr_selected()
+        )
 
         self._fsd_info = {}
         with open(get_resource_path(os.path.join("data", "fsds.json"))) as f:
@@ -41,10 +54,14 @@ class RouteController:
             or event.entry.root.event == JournalEntryKind.CarrierJump
         ):
             new_system = event.entry.root.StarSystem
-            self._update_route_progress(new_system)
+            self._update_route_progress(event.fid, new_system)
         elif event.entry.root.event == JournalEntryKind.Music:
             if event.entry.root.MusicTrack == "GalaxyMap":
-                self._copy_next_route_system()
+                self._copy_next_route_system(event.fid)
+
+    def _is_selected_cmdr(self, fid: str) -> bool:
+        cmdr = self.parent.model.selected_cmdr
+        return cmdr is not None and cmdr.fid == fid
 
     def on_cmdr_selected(self):
         route = self.model.current_route
@@ -53,68 +70,74 @@ class RouteController:
         self.view.refuel.pack_forget()
         self.view.neutron.pack_forget()
 
-        if route:
-            self.view.destination_input.configure(value=route.destination)
-            self.view.results.pack(side="top", fill="x", expand=False)
-            self.view.next_system.configure(
-                text=route.route[route.progress + 1].system_name
-            )
-            if route.route[route.progress].refuel:
-                self.view.refuel.pack(side="top", fill="x", padx=5, pady=5)
-            if route.route[route.progress].boost:
-                self.view.neutron.pack(side="top", fill="x", padx=5, pady=5)
-
-    def _copy_next_route_system(self):
-        if not self.model.current_route:
+        if not route:
+            self.model.destination.set("")
             return
 
-        next_system = self.model.current_route.route[
-            self.model.current_route.progress + 1
-        ].system_name
+        self.model.destination.set(route.destination)
+        self.view.results.pack(side="top", fill="x", expand=False)
+        self.view.jump_counter.configure(
+            text=f"{route.progress}/{len(route.route) - 1}"
+        )
+        self.view.next_system.configure(
+            text=route.route[route.progress + 1].system_name
+        )
+        if route.route[route.progress].refuel:
+            self.view.refuel.pack(side="top", fill="x", padx=5, pady=5)
+        if route.route[route.progress].boost:
+            self.view.neutron.pack(side="top", fill="x", padx=5, pady=5)
+
+    def _copy_next_route_system(self, fid: str):
+        route = self.model.routes.get(fid)
+        if not route or not self._is_selected_cmdr(fid):
+            return
+
+        next_system = route.route[route.progress + 1].system_name
         self.view.parent.copy_to_clipboard(next_system)
 
-    def _update_route_progress(self, current_system_name: str):
-        if not self.model.current_route:
+    def _update_route_progress(self, fid: str, current_system_name: str):
+        route = self.model.routes.get(fid)
+        if not route:
             return
 
-        if (
-            self.model.current_route.route[
-                self.model.current_route.progress + 1
-            ].system_name
-            != current_system_name
-        ):
+        if route.route[route.progress + 1].system_name != current_system_name:
             return
 
-        self.model.current_route.progress += 1
+        route.progress += 1
+        is_selected = self._is_selected_cmdr(fid)
 
-        if self.model.current_route.progress == len(self.model.current_route.route) - 1:
-            self.view.results.pack_forget()
-            self.view.refuel.pack_forget()
-            self.view.neutron.pack_forget()
-            cmdr = self.model._parent.selected_cmdr
-            assert cmdr is not None
-            del self.model.routes[cmdr.fid]
+        if route.progress == len(route.route) - 1:
+            del self.model.routes[fid]
+            if is_selected:
+                self.view.results.pack_forget()
+                self.view.refuel.pack_forget()
+                self.view.neutron.pack_forget()
+            return
+
+        if not is_selected:
             return
 
         self.view.neutron.pack_forget()
         self.view.refuel.pack_forget()
 
         self.view.jump_counter.configure(
-            text=f"{self.model.current_route.progress}/{len(self.model.current_route.route) - 1}"
+            text=f"{route.progress}/{len(route.route) - 1}"
         )
         self.view.next_system.configure(
-            text=f"{self.model.current_route.route[self.model.current_route.progress + 1].system_name}"
+            text=f"{route.route[route.progress + 1].system_name}"
         )
 
-        if self.model.current_route.route[self.model.current_route.progress].refuel:
+        if route.route[route.progress].refuel:
             self.view.refuel.pack(side="top", fill="x", expand=False, padx=5, pady=5)
 
-        if self.model.current_route.route[self.model.current_route.progress].boost:
+        if route.route[route.progress].boost:
             self.view.neutron.pack(side="top", fill="x", expand=False, padx=5, pady=5)
 
     def _get_route(self):
         destination = self.model.destination.get()
-        destination_id = self.model.destination_suggestions[destination.lower()]
+        destination_id = self.model.destination_suggestions.get(destination.lower())
+        if destination_id is None:
+            return
 
         cmdr = self.parent.model.selected_cmdr
         if not cmdr:
@@ -146,13 +169,22 @@ class RouteController:
             fsd_supercharge_multiplier = fsd_info.get("charmul", 4)
 
             if fsd_engineering := fsd_module.Engineering:
-                optimalmass = [
-                    modifier
-                    for modifier in fsd_engineering.Modifiers
-                    if modifier.Label == "FSDOptimalMass"
-                ]
-                if optimalmass:
-                    fsd_optimal_mass = optimalmass[0].Value
+                for modifier in fsd_engineering.Modifiers:
+                    if modifier.Value is None:
+                        continue
+                    if modifier.Label.lower() == "fsdoptimalmass":
+                        fsd_optimal_mass = modifier.Value
+                    elif modifier.Label.lower() == "maxfuelperjump":
+                        fsd_max_fuel = modifier.Value
+
+            range_boost = next(
+                (
+                    GUARDIAN_FSD_BOOST.get(module.Item.lower(), 0)
+                    for module in cmdr.current_ship_slef.Modules
+                    if module.Item.lower().startswith("int_guardianfsdbooster")
+                ),
+                0,
+            )
 
             route_params = {
                 "source": str(start_id),
@@ -174,17 +206,19 @@ class RouteController:
                 "internal_tank_size": str(cmdr.current_ship_slef.FuelCapacity.Reserve),
                 "reserve_size": "0",
                 "max_fuel_per_jump": str(fsd_max_fuel),
-                "range_boost": "10.5",
+                "range_boost": str(range_boost),
                 "ship_build": cmdr.current_ship_slef.model_dump_json(),
                 "max_time": "60",
                 "cargo": "0",
                 "algorithm": "optimistic",
-                "supercharge_mutliplier": fsd_supercharge_multiplier,
+                "supercharge_multiplier": str(fsd_supercharge_multiplier),
                 "injection_multiplier": "2",
             }
 
             res = requests.post(
-                "https://www.spansh.co.uk/api/generic/route", data=route_params
+                "https://www.spansh.co.uk/api/generic/route",
+                data=route_params,
+                timeout=30,
             )
             if res.status_code != 200 and res.status_code != 202:
                 raise Exception(f"Spansh didn't like that: {res.text}")
@@ -193,7 +227,8 @@ class RouteController:
 
             while True:
                 res = requests.get(
-                    f"https://www.spansh.co.uk/api/results/{route_identifier}"
+                    f"https://www.spansh.co.uk/api/results/{route_identifier}",
+                    timeout=30,
                 )
                 if res.status_code == 202:
                     time.sleep(5)
@@ -204,6 +239,8 @@ class RouteController:
 
             res = res.json()
             route = res["result"]["jumps"]
+            if len(route) < 2:
+                return
             for entry in route:
                 entry["completed"] = False
             route[0]["completed"] = True
@@ -242,7 +279,21 @@ class RouteController:
 
             self.parent.view.add_callback(update_ui)
 
-        threading.Thread(target=route, daemon=True).start()
+        threading.Thread(target=self._run_route, args=(route,), daemon=True).start()
+
+    def _run_route(self, fn):
+        try:
+            fn()
+        except Exception:
+            traceback.print_exc()
+        finally:
+
+            def update_ui():
+                self.view.progress.pack_forget()
+                self.view.destination_input.configure(state="normal")
+                self.view.button.configure(state="normal")
+
+            self.view.parent.add_callback(update_ui)
 
     def _get_destination_suggestions(self) -> bool:
         search_phrase = self.model.destination.get()
@@ -266,6 +317,7 @@ class RouteController:
         def fetch():
             res = requests.post(
                 "https://www.spansh.co.uk/api/systems/search/save",
+                timeout=30,
                 data=json.dumps(search_string),
             )
             if res.status_code != 200:
@@ -275,7 +327,8 @@ class RouteController:
             ref_string = res["search_reference"]
 
             res = requests.get(
-                f"https://www.spansh.co.uk/api/systems/search/recall/{ref_string}"
+                f"https://www.spansh.co.uk/api/systems/search/recall/{ref_string}",
+                timeout=30,
             )
 
             if res.status_code != 200:

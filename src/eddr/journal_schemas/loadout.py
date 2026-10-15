@@ -12,9 +12,10 @@ class FuelCapacity(BaseModel):
 
 class Modifier(BaseModel):
     Label: str
-    Value: float
-    OriginalValue: float
-    LessIsGood: int
+    Value: float | None = Field(default=None)
+    ValueStr: str | None = Field(default=None)
+    OriginalValue: float | None = Field(default=None)
+    LessIsGood: int | None = Field(default=None)
 
 
 class ModuleEngineering(BaseModel):

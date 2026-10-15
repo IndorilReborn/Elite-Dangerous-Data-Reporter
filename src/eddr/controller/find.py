@@ -1,5 +1,6 @@
 import json
 import threading
+import traceback
 import urllib.parse
 from typing import TYPE_CHECKING
 
@@ -76,16 +77,18 @@ class FindController:
             return
 
         def _do_query():
-            self.model.last_search_params = search_string
             res = requests.post(
-                "https://www.spansh.co.uk/api/stations/search/save", data=search_string
+                "https://www.spansh.co.uk/api/stations/search/save",
+                data=search_string,
+                timeout=30,
             )
             if res.status_code != 200:
                 raise Exception(f"Spansh not happy: {res.text}")
             res = res.json()
             ref_string = res["search_reference"]
             res = requests.get(
-                f"https://www.spansh.co.uk/api/stations/search/recall/{ref_string}"
+                f"https://www.spansh.co.uk/api/stations/search/recall/{ref_string}",
+                timeout=30,
             )
             if res.status_code != 200:
                 raise Exception(f"Spansh not happy: {res.text}")
@@ -145,9 +148,25 @@ class FindController:
                 self.view._lookup_type_combobox.configure(state="normal")
                 self.view.find_button.configure(state="normal")
 
+            self.model.last_search_params = search_string
+
             self.parent.view.add_callback(update_ui)
 
-        threading.Thread(target=_do_query, daemon=True).start()
+        threading.Thread(target=self._run_query, args=(_do_query,), daemon=True).start()
+
+    def _run_query(self, fn):
+        try:
+            fn()
+        except Exception:
+            traceback.print_exc()
+        finally:
+
+            def update_ui():
+                self.view.find_progress.pack_forget()
+                self.view._lookup_type_combobox.configure(state="normal")
+                self.view.find_button.configure(state="normal")
+
+            self.view.parent.add_callback(update_ui)
 
     def _get_search_params(self, cmdr: CMDRStatus, search_type: str):
         assert cmdr.location.root.location_type != CMDRLocationKind.Unknown

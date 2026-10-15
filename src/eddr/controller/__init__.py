@@ -1,10 +1,12 @@
 import os
 import re
 import threading
+import traceback
 import urllib.parse
 from datetime import UTC, datetime
 from typing import cast
 
+import requests
 from sqlmodel import Session, col, select
 from watchdog.events import (
     DirCreatedEvent,
@@ -36,8 +38,8 @@ from eddr.journal_schemas.fsd_jump import FSDJump
 from eddr.journal_schemas.loadout import FuelCapacity, Loadout
 from eddr.journal_schemas.location import Location
 from eddr.models import Model
-from eddr.utils import open_file
-from eddr.view import View
+from eddr.utils import APP_VERSION, open_file, parse_version_str
+from eddr.view import ConfirmationPopup, View
 
 JOURNAL_PATTERN = r"Journal\.\d{4}-\d{2}-\d{2}T\d{6}\.\d{2}\.log$"
 
@@ -54,11 +56,11 @@ class JournalEventHandler(FileSystemEventHandler):
         | FileCreatedEvent,
     ) -> None:
         assert isinstance(event.src_path, str)
-        print(f"file updated: {event.src_path}")
         if event.is_directory:
             return
-        if not event.src_path.endswith(".log"):
+        if not re.fullmatch(JOURNAL_PATTERN, os.path.basename(event.src_path)):
             return
+        print(f"file updated: {event.src_path}")
         self.controller._schedule_journal_update(event.src_path)
 
     def on_created(self, event: DirCreatedEvent | FileCreatedEvent) -> None:
@@ -85,11 +87,54 @@ class Controller:
         self._observer.daemon = True
 
         self.warm_up = True
-        self.last_events = []
+
+        self._check_version()
 
         threading.Thread(target=self._warm_up_journals, daemon=True).start()
 
+    def _check_version(self):
+        try:
+            res = requests.get(
+                "https://api.github.com/repos/YuiYukihira/Elite-Dangerous-Data-Reporter/releases/latest"
+            )
+            res.raise_for_status()
+        except requests.RequestException as e:
+            print(f"Error: Could not get latest version: {e}")
+            return
+        latest_version_str = res.json().get("tag_name")
+        if not isinstance(latest_version_str, str):
+            return
+        latest_version = parse_version_str(latest_version_str)
+        if not latest_version:
+            return
+
+        if APP_VERSION < latest_version:
+
+            def _open_release_page():
+                open_file(
+                    "https://github.com/YuiYukihira/Elite-Dangerous-Data-Reporter/releases/latest"
+                )
+
+            ConfirmationPopup(
+                self.view.root,
+                "Update Available",
+                f"New version available: {latest_version}\nGo to release page?",
+                _open_release_page,
+            )
+
     def _warm_up_journals(self):
+        try:
+            self._read_all_journals()
+        except Exception:
+            print(f"Exception while warming up journals:\n{traceback.format_exc()}")
+        finally:
+            self.warm_up = False
+            try:
+                self.update_active_journals()
+            finally:
+                self._observer.start()
+
+    def _read_all_journals(self):
         handler = JournalEventHandler(self)
 
         journal_files = []
@@ -112,7 +157,12 @@ class Controller:
 
         for index, journal_file in enumerate(journal_files):
             self.view.add_callback(update_progress, index, len(journal_files))
-            self.journal_reader.update_journal_file(journal_file)
+            try:
+                self.journal_reader.update_journal_file(journal_file)
+            except Exception:
+                print(
+                    f"Exception while reading {journal_file}:\n{traceback.format_exc()}"
+                )
         print(f"Journals processed {datetime.now(UTC)}")
         self.view.add_callback(self.update_active_journals)
         self.warm_up = False
@@ -128,18 +178,13 @@ class Controller:
         self.view.add_callback(self._update_journal, journal_path)
 
     def _update_journal(self, journal_path: str):
-        self.journal_reader.update_journal_file(journal_path)
-        self.update_active_journals()
-        self.update_pending_for_journal[journal_path] = False
+        try:
+            self.journal_reader.update_journal_file(journal_path)
+            self.update_active_journals()
+        finally:
+            self.update_pending_for_journal[journal_path] = False
 
     def _process_journal_msg(self, msg: JournalEntry):
-        if self.warm_up:
-            self.last_events.append(msg.entry.root.event)
-            self.last_events = self.last_events[-10:]
-            self.view.add_callback(
-                self.view.loading_view.last_events.configure,
-                text="\n".join(self.last_events),
-            )
         with Session(engine) as db:
             if msg.entry.root.event == JournalEntryKind.CarrierStats:
                 carrier_info = db.get(Carrier, msg.entry.root.CarrierID)
@@ -277,7 +322,7 @@ class Controller:
                     market_id=cast(int, msg.MarketID),
                 )
             )
-        elif msg.Docked and msg.StationType == "Station":
+        elif msg.Docked:
             cmdr.location = CMDRLocation(
                 root=CMDRLocationStation(
                     system_name=msg.StarSystem,

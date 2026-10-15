@@ -1,6 +1,7 @@
 import os
+import traceback
 from collections.abc import Callable
-from typing import Any
+from typing import Any, BinaryIO
 
 from pydantic import BaseModel, ValidationError
 from sqlmodel import Session, func, select
@@ -59,16 +60,16 @@ class JournalReader:
             # We've already read this journal somewhat
             if db_journal_file:
                 if db_journal_file.last_read_offest < journal_file_size:
-                    with open(journal_file, encoding="utf-8") as file:
+                    with open(journal_file, "rb") as file:
                         file.seek(db_journal_file.last_read_offest)
-                        lines = file.readlines()
+                        lines, offset = self._read_complete_lines(file)
                         journal_entries = self._read_events(lines)
 
                         is_active = self._get_is_journal_active(journal_entries)
                         db_journal_file.active = is_active
 
                         for journal_entry in journal_entries:
-                            self.callback(
+                            self._dispatch(
                                 JournalEntry(
                                     entry=journal_entry,
                                     fid=db_journal_file.fid,
@@ -77,13 +78,13 @@ class JournalReader:
                                 )
                             )
 
-                        db_journal_file.last_read_offest = file.tell()
+                        db_journal_file.last_read_offest = offset
                     db.add(db_journal_file)
                     db.commit()
                 return
 
-            with open(journal_file, encoding="utf-8") as file:
-                lines = file.readlines()
+            with open(journal_file, "rb") as file:
+                lines, offset = self._read_complete_lines(file)
                 journal_entries = self._read_events(lines)
 
                 fid = self._get_fid_from_journal_entries(journal_entries)
@@ -96,13 +97,13 @@ class JournalReader:
                     filename=journal_file,
                     active=is_active,
                     fid=fid,
-                    last_read_offest=file.tell(),
+                    last_read_offest=offset,
                 )
                 db.add(db_journal_file)
                 db.commit()
 
                 for journal_entry in journal_entries:
-                    self.callback(
+                    self._dispatch(
                         JournalEntry(
                             entry=journal_entry,
                             fid=fid,
@@ -110,6 +111,24 @@ class JournalReader:
                             journal_file=journal_file,
                         )
                     )
+
+    def _dispatch(self, journal_entry: JournalEntry):
+        try:
+            self.callback(journal_entry)
+        except Exception:
+            print(f"Exception while processing journal entry:\n{traceback.format_exc()}")
+
+    @staticmethod
+    def _read_complete_lines(file: BinaryIO) -> tuple[list[str], int]:
+        """Read newline-terminated lines from the current position.
+
+        A trailing partial line (game mid-write) is left unread; the returned
+        byte offset points at its start so it is picked up next time.
+        """
+        start = file.tell()
+        data = file.read()
+        end = data.rfind(b"\n") + 1
+        return data[:end].decode("utf-8").split("\n")[:-1], start + end
 
     @staticmethod
     def _read_events(raw_journal_lines: list[str]) -> list[RawJournalEntry]:

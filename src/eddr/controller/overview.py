@@ -5,7 +5,7 @@ import urllib.parse
 from typing import TYPE_CHECKING
 
 from eddr.db import CMDRLocationKind
-from eddr.utils import open_file
+from eddr.utils import APP_VERSION, open_file
 
 if TYPE_CHECKING:
     from eddr.controller import Controller
@@ -59,13 +59,13 @@ class OverviewController:
         slef = {
             "header": {
                 "appName": "Elite Dangerous Data Reporter",
-                "appVersion": "0.1.0",
+                "appVersion": str(APP_VERSION),
                 "appURL": "https://github.com/YuiYukihira/Elite-Dangerous-Data-Reporter",
             },
-            "data": cmdr.current_ship_slef.model_dump(),
+            "data": cmdr.current_ship_slef.model_dump(mode="json"),
         }
 
-        self.parent.view.copy_to_clipboard(json.dumps(slef))
+        self.parent.view.copy_to_clipboard(json.dumps([slef]))
 
     def _open_ship_on_EDSY(self):
         cmdr = self.parent.model.selected_cmdr
@@ -86,7 +86,7 @@ class OverviewController:
             str.encode(cmdr.current_ship_slef.model_dump_json(), encoding="utf-8")
         )
         encoded = base64.urlsafe_b64encode(compressed)
-        url_params = urllib.parse.urlencode({"I": encoded.decode("utf-8")})
+        url_params = urllib.parse.urlencode({"data": encoded.decode("utf-8")})
         open_file(f"https://coriolis.io/import?{url_params}")
 
     def _open_location_on_inara(self):

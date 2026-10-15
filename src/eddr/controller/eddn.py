@@ -12,7 +12,7 @@ from eddr.journal_schemas.base import JournalEntryKind
 from eddr.journal_schemas.docked import Docked
 from eddr.journal_schemas.fsd_jump import FSDJump
 from eddr.journal_schemas.market import Market, MarketFileEntry
-from eddr.utils import get_resource_path
+from eddr.utils import APP_VERSION
 
 if TYPE_CHECKING:
     from eddr.controller import Controller
@@ -21,9 +21,6 @@ if TYPE_CHECKING:
 class EDDNController:
     def __init__(self, parent: "Controller"):
         self.parent = parent
-
-        with open(get_resource_path("VERSION")) as f:
-            self.version = f.read()
 
         self.eddn_queue: Queue[dict[str, Any]] = Queue()
 
@@ -55,12 +52,24 @@ class EDDNController:
                 market_entry = MarketFileEntry.model_validate_json(f.read())
             if market_entry is None:
                 return
+            if market_entry.MarketID != msg.entry.root.MarketID:
+                return
 
             self._send_market(cmdr, msg.entry.root, market_entry)
         if msg.entry.root.event == JournalEntryKind.FSDJump:
             self._send_fsd_jump_to_eddn(cmdr, msg.entry.root)
         if msg.entry.root.event == JournalEntryKind.Docked:
             self._send_docked_to_eddn(cmdr, msg.entry.root)
+
+    @staticmethod
+    def _get_header(cmdr: CMDRStatus) -> dict:
+        return {
+            "uploaderID": cmdr.name,
+            "gameversion": cmdr.gameversion,
+            "gamebuild": cmdr.gamebuild,
+            "softwareName": "Elite Dangerous Data Reporter",
+            "softwareVersion": str(APP_VERSION),
+        }
 
     def _send_docked_to_eddn(self, cmdr: CMDRStatus, journal_msg: Docked):
         assert cmdr.location.root.location_type != CMDRLocationKind.Unknown
@@ -71,16 +80,13 @@ class EDDNController:
 
         msg_dict = journal_msg.model_dump()
         msg_dict["timestamp"] = msg_dict["timestamp"].isoformat()
+        msg_dict["StarPos"] = list(cmdr.location.root.system_coords)
+        msg_dict["horizons"] = cmdr.horizons
+        msg_dict["odyssey"] = cmdr.odyssey
 
         docked_msg = {
             "$schemaRef": "https://eddn.edcd.io/schemas/journal/1",
-            "header": {
-                "uploaderID": cmdr.name,
-                "gameversion": cmdr.gameversion,
-                "gamebuild": cmdr.gamebuild,
-                "softwareName": "Elite Dangerous Data Reporter",
-                "softwareVersion": self.version,
-            },
+            "header": self._get_header(cmdr),
             "message": msg_dict,
         }
 
@@ -89,16 +95,12 @@ class EDDNController:
     def _send_fsd_jump_to_eddn(self, cmdr: CMDRStatus, journal_msg: FSDJump):
         msg_dict = journal_msg.model_dump()
         msg_dict["timestamp"] = msg_dict["timestamp"].isoformat()
+        msg_dict["horizons"] = cmdr.horizons
+        msg_dict["odyssey"] = cmdr.odyssey
 
         jump_msg = {
             "$schemaRef": "https://eddn.edcd.io/schemas/journal/1",
-            "header": {
-                "uploaderID": cmdr.name,
-                "gameversion": cmdr.gameversion,
-                "gamebuild": cmdr.gamebuild,
-                "softwareName": "Elite Dangerous Data Reporter",
-                "softwareVersion": self.version,
-            },
+            "header": self._get_header(cmdr),
             "message": msg_dict,
         }
 
@@ -139,13 +141,7 @@ class EDDNController:
 
         market_msg = {
             "$schemaRef": "https://eddn.edcd.io/schemas/commodity/3",
-            "header": {
-                "uploaderID": cmdr.name,
-                "gameversion": cmdr.gameversion,
-                "gamebuild": cmdr.gamebuild,
-                "softwareName": "Elite Dangerous Data Reporter",
-                "softwareVersion": self.version,
-            },
+            "header": self._get_header(cmdr),
             "message": {
                 "horizons": cmdr.horizons,
                 "odyssey": cmdr.odyssey,
@@ -163,10 +159,19 @@ class EDDNController:
     def _process_eddn_queue(self):
         while True:
             item = self.eddn_queue.get()
-            self._send_to_eddn(item)
+            try:
+                self._send_to_eddn(item)
+            except Exception as e:
+                print(f"Unexpected error uploading to EDDN: {e!r}")
 
     def _send_to_eddn(self, item: dict):
-        r = requests.post("https://eddn.edcd.io:4430/upload/", json=item)
+        try:
+            r = requests.post(
+                "https://eddn.edcd.io:4430/upload/", json=item, timeout=10
+            )
+        except requests.RequestException as e:
+            print(f"Error uploading to EDDN: {e!r}")
+            return
         if r.status_code != 200:
             print(f"Error uploading to EDDN: {r.text}")
 

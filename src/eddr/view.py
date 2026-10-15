@@ -8,7 +8,7 @@ from typing import Any, Literal
 
 from eddr.components import SuggestionBox
 from eddr.models import Model
-from eddr.utils import get_resource_path
+from eddr.utils import APP_VERSION
 
 
 class View:
@@ -70,8 +70,7 @@ class View:
         self.top_bar.pack(side="top", fill="x")
 
         # Version
-        with open(get_resource_path("VERSION")) as f:
-            self.version = ttk.Label(self.top_bar, text=f.read())
+        self.version = ttk.Label(self.top_bar, text=str(APP_VERSION))
         self.version.pack(side="left", anchor="nw")
 
         # Clock
@@ -184,6 +183,7 @@ class OverviewView:
             self._cmdr_selector_frame,
             textvariable=self.parent.model.selected_cmdr_name,
             values=[],
+            state="readonly",
         )
         self.cmdr_selector_combobox.pack(side="left", fill="x", expand=False)
 
@@ -218,7 +218,7 @@ class OverviewView:
         )
 
         self.location_name = StringVar(value="")
-        self.location_frame = ttk.LabelFrame(self.tab, text="System")
+        self.location_frame = ttk.LabelFrame(self.tab, text="Location")
         self.location_frame.pack(side="top", fill="x", expand=False, padx=5, pady=5)
         self._location_label = ttk.Label(
             self.location_frame, textvariable=self.location_name
@@ -346,3 +346,51 @@ class RouteView:
 
         self.refuel = ttk.Label(self.results, text="⛽ Refuel")
         self.neutron = ttk.Label(self.results, text="✨ Neutron")
+
+
+class ConfirmationPopup:
+    def __init__(
+        self,
+        root: Tk,
+        title: str,
+        message: str,
+        on_confirm: Callable,
+        on_cancel: Callable | None = None,
+    ):
+        self.on_confirm = on_confirm
+        self.on_cancel = on_cancel
+
+        root.bell()
+
+        self.popup = tk.Toplevel(root)
+        self.popup.transient(root)
+        self.popup.title(title)
+        self.frame = ttk.Frame(self.popup, padding=12)
+        self.frame.pack(fill="both", expand=True)
+
+        tk.Label(self.frame, bitmap="question").grid(row=0, column=0, padx=8, pady=8)
+        ttk.Label(self.frame, text=message, wraplength=400, justify="center").grid(
+            row=0, column=1, padx=8, pady=8
+        )
+
+        self.buttons = ttk.Frame(self.frame)
+        self.buttons.grid(row=1, column=0, columnspan=2, padx=(8, 0))
+
+        self.confirm = ttk.Button(
+            self.buttons, text="Yes", command=self._on_confirm
+        ).pack(side="left", ipadx=8, padx=8, pady=(8, 0))
+        self.cancel = ttk.Button(self.buttons, text="No", command=self._on_cancel).pack(
+            side="left", ipadx=8, padx=8, pady=(8, 0)
+        )
+
+        self.popup.attributes("-topmost", True)
+        self.popup.focus_set()
+
+    def _on_confirm(self):
+        self.popup.destroy()
+        self.on_confirm()
+
+    def _on_cancel(self):
+        self.popup.destroy()
+        if self.on_cancel:
+            self.on_cancel()
